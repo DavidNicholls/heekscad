@@ -204,7 +204,7 @@ void CViewport::glCommands()
 					default:
 						break;
 					}
-					
+
 					if(panel != 4)
 					{
 						c0.glColor();
@@ -221,7 +221,7 @@ void CViewport::glCommands()
 						c1.glColor();
 						glVertex3d(p3.X(), p3.Y(), p3.Z());
 					}
-					
+
 
 				}
 			}
@@ -292,13 +292,13 @@ void CViewport::FrontRender(void){
 	SetViewport();
 	m_view_point.SetProjection(false);
 	m_view_point.SetModelview();
-	
+
 	SetXOR();
-	
+
 	wxGetApp().input_mode_object->OnFrontRender();
-	
+
 	EndXOR();
-	
+
 	m_render_on_front_done = true;
 }
 
@@ -362,13 +362,73 @@ void CGraphicsCanvas::OnMouse( wxMouseEvent& event )
 
 void CGraphicsCanvas::OnKeyDown(wxKeyEvent& event)
 {
-	if(event.GetKeyCode() == WXK_ESCAPE && wxGetApp().m_frame->IsFullScreen())wxGetApp().m_frame->ShowFullScreen(false);
+    HeeksCADapp &app = wxGetApp();
+
+	if(event.GetKeyCode() == WXK_ESCAPE && app.m_frame->IsFullScreen())app.m_frame->ShowFullScreen(false);
 	else
 	{
-		if(event.GetKeyCode() == WXK_ESCAPE && wxGetApp().EndSketchMode())
+		if(event.GetKeyCode() == WXK_ESCAPE && app.EndSketchMode())
 		{}
-			else wxGetApp().input_mode_object->OnKeyDown(event);
+			else app.input_mode_object->OnKeyDown(event);
 	}
+
+	if (event.GetKeyCode() == WXK_DELETE)
+	{
+		app.CreateUndoPoint();
+		app.DeleteMarkedItems();
+		app.Changed();
+	}
+
+    app.m_depressed_key = event.GetKeyCode();
+
+    switch (wxGetApp().m_depressed_key)
+    {
+        case 'p':
+        case 'P':
+			if (wxGetApp().m_previous_selection_filter == 0)
+			{
+				wxGetApp().m_previous_selection_filter = wxGetApp().m_marked_list->m_filter;
+			}
+            wxGetApp().m_marked_list->m_filter = MARKING_FILTER_POINT;
+        break;
+
+        case 'l':
+        case 'L':
+            if (wxGetApp().m_previous_selection_filter == 0)
+			{
+				wxGetApp().m_previous_selection_filter = wxGetApp().m_marked_list->m_filter;
+			}
+            wxGetApp().m_marked_list->m_filter = (MARKING_FILTER_LINE | MARKING_FILTER_ILINE);
+        break;
+
+        case 'a':
+        case 'A':
+            if (wxGetApp().m_previous_selection_filter == 0)
+			{
+				wxGetApp().m_previous_selection_filter = wxGetApp().m_marked_list->m_filter;
+			}
+            wxGetApp().m_marked_list->m_filter = MARKING_FILTER_ARC;
+        break;
+
+        case 'c':
+        case 'C':
+            if (wxGetApp().m_previous_selection_filter == 0)
+			{
+				wxGetApp().m_previous_selection_filter = wxGetApp().m_marked_list->m_filter;
+			}
+            wxGetApp().m_marked_list->m_filter = (MARKING_FILTER_CIRCLE | MARKING_FILTER_COORDINATE_SYSTEM);
+        break;
+
+        case 's':
+        case 'S':
+            if (wxGetApp().m_previous_selection_filter == 0)
+			{
+				wxGetApp().m_previous_selection_filter = wxGetApp().m_marked_list->m_filter;
+			}
+            wxGetApp().m_marked_list->m_filter = MARKING_FILTER_SKETCH;
+        break;
+    }
+
 	event.Skip();
 }
 
@@ -420,6 +480,15 @@ void CGraphicsCanvas::OnCharEvent(wxKeyEvent& event)
 
 void CGraphicsCanvas::OnKeyUp(wxKeyEvent& event)
 {
+    wxGetApp().m_depressed_key = 0;
+
+    if (wxGetApp().m_previous_selection_filter != 0)
+    {
+        // Reinstate the previous selection filter.
+        wxGetApp().m_marked_list->m_filter = wxGetApp().m_previous_selection_filter;
+		wxGetApp().m_previous_selection_filter = 0;	// Reset to indicate it's not valid.
+    }
+
 	wxGetApp().input_mode_object->OnKeyUp(event);
 	event.Skip();
 }
@@ -484,7 +553,7 @@ void CGraphicsCanvas::RefreshSoon()
 	}
 }
 
-void CViewport::OnMagExtents(bool rotate) 
+void CViewport::OnMagExtents(bool rotate)
 {
 	m_view_points.clear();
 	if(rotate){
@@ -497,7 +566,7 @@ void CViewport::OnMagExtents(bool rotate)
 	}
 }
 
-void CGraphicsCanvas::OnMagExtents(bool rotate, bool recalculate_gl_lists) 
+void CGraphicsCanvas::OnMagExtents(bool rotate, bool recalculate_gl_lists)
 {
 	CViewport::OnMagExtents(rotate);
 
@@ -612,7 +681,7 @@ void CViewport::DrawObjectsOnFront(const std::list<HeeksObj*> &list, bool do_dep
 	SetViewport();
 	m_view_point.SetProjection(do_depth_testing);
 	m_view_point.SetModelview();
-	
+
 	glDrawBuffer(GL_FRONT);
 	glDepthFunc(GL_LEQUAL);
 
@@ -711,7 +780,7 @@ void CViewport::DrawWindow(wxRect &rect, bool allow_extra_bits){
 		glVertex2f((GLfloat)x2, (GLfloat)y2 + extra_y);
 		glEnd();
 	}
-	
+
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
     glMatrixMode(GL_PROJECTION);

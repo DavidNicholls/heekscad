@@ -178,7 +178,7 @@ void HeeksDxfRead::OnReadEllipse(const double* c, double major_radius, double mi
 	AddObject(new_object);
 }
 
-void HeeksDxfRead::OnReadText(const double *point, const double height, const wxString text)
+void HeeksDxfRead::OnReadText(const double *point, const double height, const wxChar *text)
 {
     gp_Trsf trsf;
     trsf.SetTranslation( gp_Vec( gp_Pnt(0,0,0), gp_Pnt(point[0], point[1], point[2]) ) );
@@ -208,7 +208,7 @@ bool HeeksDxfRead::IsValidLayerName( const wxString layer_name ) const
     while (tokens.HasMoreTokens())
     {
         wxString token = tokens.GetNextToken();
-        if (layer_name.find(token) != -1)
+        if (layer_name.find(token) != wxNOT_FOUND)
         {
             return(false);  // We do NOT want this one added.
         }

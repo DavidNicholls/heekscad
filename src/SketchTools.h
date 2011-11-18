@@ -17,6 +17,23 @@
 
 void GetSketchMenuTools(std::list<Tool*>* t_list);
 
+class ProjectSketchOntoSolidTool: public Tool{
+
+protected:
+	double	m_deviation;
+
+public:
+	ProjectSketchOntoSolidTool();
+	~ProjectSketchOntoSolidTool(void);
+
+	// Tool's virtual functions
+    virtual void Run();
+	virtual const wxChar* GetTitle(){return _("Project Sketch onto Solid");}
+	wxString BitmapPath(){return _T("new");}
+	const wxChar* GetToolTip(){return _("Project Sketch");}
+};
+
+
 class SimplifySketchTool: public Tool{
     public:
         /**

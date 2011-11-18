@@ -5,10 +5,15 @@
 #include "stdafx.h"
 #include "HPoint.h"
 #include "../interface/PropertyVertex.h"
+#include "../interface/PropertyDouble.h"
 #include "Gripper.h"
 #include "SolveSketch.h"
 #include "DigitizeMode.h"
 #include "Drawing.h"
+#include "HeeksFrame.h"
+
+
+extern CHeeksCADInterface heekscad_interface;
 
 static unsigned char cross16[32] = {0x80, 0x01, 0x40, 0x02, 0x20, 0x04, 0x10, 0x08, 0x08, 0x10, 0x04, 0x20, 0x02, 0x40, 0x01, 0x80, 0x01, 0x80, 0x02, 0x40, 0x04, 0x20, 0x08, 0x10, 0x10, 0x08, 0x20, 0x04, 0x40, 0x02, 0x80, 0x01};
 static unsigned char cross16_selected[32] = {0xc0, 0x03, 0xe0, 0x07, 0x70, 0x0e, 0x38, 0x1c, 0x1c, 0x38, 0x0e, 0x70, 0x07, 0xe0, 0x03, 0xc0, 0x03, 0xc0, 0x07, 0xe0, 0x0e, 0x70, 0x1c, 0x38, 0x38, 0x1c, 0x70, 0x0e, 0xe0, 0x07, 0xc0, 0x03};
@@ -162,6 +167,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( which->m_p );
+		}
 	}
 	const wxChar* GetTitle(){return _("Click point location");}
 	wxString BitmapPath(){return _T("pickpos");}
@@ -169,6 +183,47 @@ public:
 };
 static ClickPointLocation click_point_location;
 
+/* static */ gp_Pnt HPoint::GetOffset(gp_Pnt location)
+{
+	wxString message(_("Enter offset in X,Y,Z format (with commas between them)"));
+	wxString caption(_("Apply Offset To Selected Location"));
+	wxString default_value(_T("0,0,0"));
+
+	wxString value = wxGetTextFromUser(message, caption, default_value);
+	wxStringTokenizer tokens(value,_T(":,\t\n"));
+
+	for (int i=0; i<3; i++)
+	{
+		if (tokens.HasMoreTokens())
+		{
+			double offset = 0.0;
+			wxString token = tokens.GetNextToken();
+			wxString evaluated_version;
+			if (PropertyDouble::EvaluateWithPython( NULL, token, evaluated_version ))
+			{
+				evaluated_version.ToDouble(&offset);
+				offset *= wxGetApp().m_view_units;
+				switch(i)
+				{
+				case 0:
+					location.SetX( location.X() + offset );
+					break;
+
+				case 1:
+					location.SetY( location.Y() + offset );
+					break;
+
+				case 2:
+					location.SetZ( location.Z() + offset );
+					break;
+				}
+
+			}
+		}
+	}
+
+	return(location);
+}
 
 class OffsetFromPoint:public Tool{
 public:
@@ -177,46 +232,21 @@ public:
 public:
 	void Run(){
 		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
-		if (pDrawingMode != NULL)
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
 		{
-			wxString message(_("Enter offset in X,Y,Z format (with commas between them)"));
-			wxString caption(_("Apply Offset To Selected Location"));
-			wxString default_value(_T("0,0,0"));
+			gp_Pnt location = HPoint::GetOffset(which->m_p);
 
-			wxString value = wxGetTextFromUser(message, caption, default_value);
-			wxStringTokenizer tokens(value,_T(" :,\t\n"));
-			
-			gp_Pnt location(which->m_p);
-			for (int i=0; i<3; i++)
+			if (pDrawingMode != NULL)
 			{
-				if (tokens.HasMoreTokens())
-				{
-					double offset = 0.0;
-					wxString token = tokens.GetNextToken();
-					if (token.ToDouble(&offset))
-					{
-						offset *= wxGetApp().m_view_units;
-						switch(i)
-						{
-						case 0: 
-							location.SetX( location.X() + offset );
-							break;
-
-						case 1:
-							location.SetY( location.Y() + offset );
-							break;
-
-						case 2:
-							location.SetZ( location.Z() + offset );
-							break;
-						}
-						
-					}
-				}
+				wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+				pDrawingMode->AddPoint();
 			}
 
-			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
-			pDrawingMode->AddPoint();
+			if (pDigitizeMode != NULL)
+			{
+				pDigitizeMode->DigitizeToLocatedPosition( location );
+			}
 		}
 	}
 	const wxChar* GetTitle(){return _("Offset from point");}
@@ -235,7 +265,8 @@ void HPoint::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 #endif
 
 	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
-	if (pDrawingMode != NULL)
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
 	{
 		click_point_location.which = this;
 		t_list->push_back(&click_point_location);
@@ -261,7 +292,7 @@ void HPoint::WriteXML(TiXmlNode *root)
 {
 	TiXmlElement * element;
 	element = new TiXmlElement( "Point" );
-	root->LinkEndChild( element );  
+	root->LinkEndChild( element );
 	element->SetAttribute("col", color.COLORREF_color());
 	element->SetDoubleAttribute("x", m_p.X());
 	element->SetDoubleAttribute("y", m_p.Y());

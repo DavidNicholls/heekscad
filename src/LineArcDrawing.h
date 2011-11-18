@@ -9,6 +9,7 @@
 enum EnumDrawingMode{
 	LineDrawingMode,
 	ArcDrawingMode,
+	ReverseArcDrawingMode,
 	ILineDrawingMode,
 	CircleDrawingMode,
 	EllipseDrawingMode,
@@ -36,6 +37,7 @@ private:
 	std::list<DigitizedPoint> spline_points;
 	HeeksObj *temp_object;
 	bool m_A_down; // is key A pressed
+	bool m_R_down; // is key R pressed - for reverse arc drawing mode
 	HeeksObj* m_container;
 	bool m_add_to_sketch;
 

@@ -9,6 +9,7 @@
 #include <wx/string.h>
 #include <wx/window.h>
 #include <wx/strconv.h>
+#include <wx/dir.h>
 
 #include <GL/gl.h>
 #include <GL/glu.h>
@@ -501,53 +502,6 @@ void VectorFont::Glyph::glCommands(
 
 
 
-/* static */ std::list<wxString> VectorFonts::GetFileNames( const wxString & Root )
-#ifdef WIN32
-{
-	std::list<wxString>	results;
-
-	WIN32_FIND_DATA file_data;
-	HANDLE hFind;
-
-	std::string pattern = std::string(Ttc(Root.c_str())) + "\\*";
-	hFind = FindFirstFile(Ctt(pattern.c_str()), &file_data);
-
-	// Now recurse down until we find document files within 'current' directories.
-	if (hFind != INVALID_HANDLE_VALUE)
-	{
-		do
-		{
-			if ((file_data.dwFileAttributes & FILE_ATTRIBUTE_DIRECTORY) == FILE_ATTRIBUTE_DIRECTORY) continue;
-
-			results.push_back(file_data.cFileName);
-		} while (FindNextFile( hFind, &file_data));
-
-		FindClose(hFind);
-	} // End if - then
-
-	return(results);
-} // End of GetFileNames() method.
-#else
-{
-	// We're in UNIX land now.
-
-	std::list<wxString>	results;
-
-	DIR *pdir = opendir(Ttc(Root.c_str()));
-				// whose names begin with "default."
-	if (pdir != NULL)
-	{
-		struct dirent *pent = NULL;
-		while ((pent=readdir(pdir)))
-		{
-			results.push_back(Ctt(pent->d_name));
-		} // End while
-		closedir(pdir);
-	} // End if - then
-
-	return(results);
-} // End of GetFileNames() method
-#endif
 
 
 CxfFont::CxfFont( const wxChar *p_szFile, const double word_space_percentage, const double character_space_percentage )
@@ -1069,26 +1023,24 @@ void VectorFonts::Add( const VectorFont::Name_t & directory )
 {
     printf("Within directory %s\n", Ttc( directory.c_str()));
 
-	std::list<wxString> files = GetFileNames( directory.c_str() );
-	for (std::list<wxString>::const_iterator l_itFile = files.begin(); l_itFile != files.end(); l_itFile++)
+	wxArrayString files;
+	wxDir dir(directory);
+
+	dir.GetAllFiles(directory, &files);
+
+	for (wxArrayString::const_iterator l_itFile = files.begin(); l_itFile != files.end(); l_itFile++)
 	{
 	    printf("Looking at %s\n", Ttc(l_itFile->c_str()));
 
 		try {
 			if (CxfFont::ValidExtension( *l_itFile ))
 			{
-				wxString path( directory );
-				path = path + _T("/");
-				path = path + l_itFile->c_str();
-				CxfFont *pFont = new CxfFont( path.c_str(), m_word_space_percentage, m_character_space_percentage );
+				CxfFont *pFont = new CxfFont( l_itFile->c_str(), m_word_space_percentage, m_character_space_percentage );
 				m_fonts.insert( std::make_pair( pFont->Name(), pFont ) );
 			} // End if - then
 			else if (HersheyFont::ValidExtension( *l_itFile ))
 			{
-				wxString path( directory );
-				path = path + _T("/");
-				path = path + l_itFile->c_str();
-				HersheyFont *pFont = new HersheyFont( path.c_str(), m_word_space_percentage, m_character_space_percentage );
+				HersheyFont *pFont = new HersheyFont( l_itFile->c_str(), m_word_space_percentage, m_character_space_percentage );
 				m_fonts.insert( std::make_pair( pFont->Name(), pFont ) );
 			} // End if - then
 		} // End try
@@ -1115,7 +1067,7 @@ std::set<VectorFont::Name_t> VectorFonts::FontNames() const
 	std::set<VectorFont::Name_t> names;
 	for (Fonts_t::const_iterator l_itFont = m_fonts.begin(); l_itFont != m_fonts.end(); l_itFont++)
 	{
-		names.insert(l_itFont->first.c_str());
+		names.insert(l_itFont->first);
 	} // End for
 
 	return(names);

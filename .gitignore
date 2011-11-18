@@ -3,7 +3,7 @@
 *.so
 
 #ignore the bin directory
-bin/
+# bin/
 
 #ignore the stuff cmake creates
 CMakeFiles/

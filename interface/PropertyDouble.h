@@ -28,6 +28,12 @@ public:
 	Property *MakeACopy(void)const;
 	void CallSetFunction()const;
 	const wxChar* GetShortString(void)const;
+
+	virtual bool Evaluate( const std::list<Property *> properties, wxString value, wxString & evaluated_version ) const;
+	virtual PyObject *PyName() const;
+	virtual PyObject *PyValue() const;
+
+	static bool EvaluateWithPython( const std::list<Property *> *pProperties, wxString value, wxString & evaluated_version );
 };
 
 #endif

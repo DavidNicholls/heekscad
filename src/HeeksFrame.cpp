@@ -41,6 +41,7 @@
 #include "Sectioning.h"
 #include "MenuSeparator.h"
 #include "HGear.h"
+#include "Bolt.h"
 
 using namespace std;
 
@@ -82,9 +83,9 @@ bool DnDFile::OnDropFiles(wxCoord, wxCoord, const wxArrayString& filenames)
 }
 
 #ifdef WIN32
-static wxString default_layout_string = _T("layout2|name=ToolBar;caption=General Tools;state=2108156;dir=1;layer=10;row=0;pos=0;prop=100000;bestw=279;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=GeomBar;caption=Geometry Tools;state=2108156;dir=1;layer=10;row=0;pos=290;prop=100000;bestw=147;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=SolidBar;caption=Solid Tools;state=2108156;dir=1;layer=10;row=0;pos=448;prop=100000;bestw=116;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=485;floaty=209;floatw=143;floath=71|name=ViewingBar;caption=Viewing Tools;state=2108156;dir=1;layer=10;row=0;pos=575;prop=100000;bestw=89;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=479;floaty=236;floatw=116;floath=71|name=Graphics;caption=Graphics;state=768;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=800;besth=600;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Objects;caption=Objects;state=2099196;dir=4;layer=1;row=0;pos=0;prop=100000;bestw=300;besth=400;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=204;floaty=327;floatw=318;floath=440|name=Options;caption=Options;state=2099196;dir=4;layer=1;row=0;pos=1;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Input;caption=Input;state=2099196;dir=4;layer=1;row=0;pos=2;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Properties;caption=Properties;state=2099196;dir=4;layer=1;row=0;pos=3;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=504|dock_size(4,1,0)=205|dock_size(1,10,0)=33|");
+static wxString default_layout_string = _T("layout2|name=ToolBar;caption=General Tools;state=2108156;dir=1;layer=10;row=0;pos=0;prop=100000;bestw=279;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=GeomBar;caption=Geometry Tools;state=2108156;dir=1;layer=10;row=0;pos=290;prop=100000;bestw=147;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=SolidBar;caption=Solid Tools;state=2108156;dir=1;layer=10;row=0;pos=448;prop=100000;bestw=156;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=485;floaty=209;floatw=143;floath=71|name=ViewingBar;caption=Viewing Tools;state=2108156;dir=1;layer=10;row=0;pos=575;prop=100000;bestw=89;besth=31;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=479;floaty=236;floatw=116;floath=71|name=Graphics;caption=Graphics;state=768;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=800;besth=600;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Objects;caption=Objects;state=2099196;dir=4;layer=1;row=0;pos=0;prop=100000;bestw=300;besth=400;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=204;floaty=327;floatw=318;floath=440|name=Options;caption=Options;state=2099196;dir=4;layer=1;row=0;pos=1;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Input;caption=Input;state=2099196;dir=4;layer=1;row=0;pos=2;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Properties;caption=Properties;state=2099196;dir=4;layer=1;row=0;pos=3;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=504|dock_size(4,1,0)=205|dock_size(1,10,0)=33|");
 #else
-static wxString default_layout_string = _T("layout2|name=ToolBar;caption=General Tools;state=2108156;dir=1;layer=10;row=0;pos=0;prop=100000;bestw=328;besth=40;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=469;floaty=243;floatw=345;floath=64|name=GeomBar;caption=Geometry Tools;state=2108156;dir=1;layer=10;row=0;pos=339;prop=100000;bestw=174;besth=38;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=319;floaty=311;floatw=191;floath=62|name=SolidBar;caption=Solid Tools;state=2108156;dir=1;layer=10;row=0;pos=638;prop=100000;bestw=140;besth=38;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=373;floaty=261;floatw=157;floath=62|name=ViewingBar;caption=Viewing Tools;state=2108156;dir=1;layer=10;row=0;pos=524;prop=100000;bestw=102;besth=40;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=334;floaty=257;floatw=119;floath=64|name=Graphics;caption=Graphics;state=768;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=800;besth=600;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Objects;caption=Objects;state=2099196;dir=4;layer=1;row=0;pos=0;prop=100000;bestw=300;besth=400;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=204;floaty=327;floatw=318;floath=440|name=Options;caption=Options;state=2099196;dir=4;layer=1;row=0;pos=1;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Input;caption=Input;state=2099196;dir=4;layer=1;row=0;pos=2;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Properties;caption=Properties;state=2099196;dir=4;layer=1;row=0;pos=3;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=MachiningBar;caption=Machining tools;state=2108156;dir=1;layer=10;row=0;pos=791;prop=100000;bestw=178;besth=40;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=357;floaty=413;floatw=195;floath=64|name=Program;caption=Program;state=2099196;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=600;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Output;caption=Output;state=2099196;dir=3;layer=0;row=0;pos=1;prop=100000;bestw=600;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=504|dock_size(4,1,0)=334|dock_size(3,0,0)=110|dock_size(1,10,0)=42|");
+static wxString default_layout_string = _T("layout2|name=ToolBar;caption=General Tools;state=2108156;dir=1;layer=10;row=0;pos=0;prop=100000;bestw=328;besth=40;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=469;floaty=243;floatw=345;floath=64|name=GeomBar;caption=Geometry Tools;state=2108156;dir=1;layer=10;row=0;pos=339;prop=100000;bestw=174;besth=38;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=319;floaty=311;floatw=191;floath=62|name=SolidBar;caption=Solid Tools;state=2108156;dir=1;layer=10;row=0;pos=638;prop=100000;bestw=180;besth=38;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=373;floaty=261;floatw=157;floath=62|name=ViewingBar;caption=Viewing Tools;state=2108156;dir=1;layer=10;row=0;pos=524;prop=100000;bestw=102;besth=40;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=334;floaty=257;floatw=119;floath=64|name=Graphics;caption=Graphics;state=768;dir=5;layer=0;row=0;pos=0;prop=100000;bestw=800;besth=600;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Objects;caption=Objects;state=2099196;dir=4;layer=1;row=0;pos=0;prop=100000;bestw=300;besth=400;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=204;floaty=327;floatw=318;floath=440|name=Options;caption=Options;state=2099196;dir=4;layer=1;row=0;pos=1;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Input;caption=Input;state=2099196;dir=4;layer=1;row=0;pos=2;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Properties;caption=Properties;state=2099196;dir=4;layer=1;row=0;pos=3;prop=100000;bestw=300;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=MachiningBar;caption=Machining tools;state=2108156;dir=1;layer=10;row=0;pos=791;prop=100000;bestw=178;besth=40;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=357;floaty=413;floatw=195;floath=64|name=Program;caption=Program;state=2099196;dir=3;layer=0;row=0;pos=0;prop=100000;bestw=600;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|name=Output;caption=Output;state=2099196;dir=3;layer=0;row=0;pos=1;prop=100000;bestw=600;besth=200;minw=-1;minh=-1;maxw=-1;maxh=-1;floatx=-1;floaty=-1;floatw=-1;floath=-1|dock_size(5,0,0)=504|dock_size(4,1,0)=334|dock_size(3,0,0)=110|dock_size(1,10,0)=42|");
 #endif
 
 
@@ -99,6 +100,9 @@ bool CHeeksFrame::m_logtimestamps;
 CHeeksFrame::CHeeksFrame( const wxString& title, const wxPoint& pos, const wxSize& size )
 	: wxFrame((wxWindow *)NULL, -1, title, pos, size)
 {
+	m_geometryBar = NULL;
+	m_transformBar = NULL;
+
 	wxGetApp().m_frame = this;
 
 	m_logger = new wxLogWindow(NULL,_("Trace Log"),false,false); // disable log popups
@@ -241,7 +245,18 @@ CHeeksFrame::~CHeeksFrame()
 	config.Write(_T("ToolImageSize"), ToolImage::GetBitmapSize());
 	config.Write(_T("Perspective"), m_graphics->m_view_point.GetPerspective());
 
-	delete m_aui_manager;
+	heekscad_interface.RemoveMainToolbar();
+	heekscad_interface.RemoveGeometryToolbar();
+	heekscad_interface.RemoveSolidToolbar();
+	heekscad_interface.RemoveViewingToolbar();
+	heekscad_interface.RemoveTransformToolbar();
+	heekscad_interface.RemoveOptionsWindow();
+	heekscad_interface.RemovePropertiesWindow();
+	heekscad_interface.RemoveLogWindow();
+	heekscad_interface.RemoveObjectsWindow();
+	heekscad_interface.RemoveInputWindow();
+
+	delete m_aui_manager; m_aui_manager = NULL;
 	delete wxLog::SetActiveTarget(new wxLogStderr(NULL));
 }
 
@@ -732,6 +747,9 @@ static void OnNewOrigin( wxCommandEvent& WXUNUSED( event ) )
 	new_object->PickFrom1Point();
 }
 
+
+
+
 static void OnOpenButton( wxCommandEvent& event )
 {
 	wxGetApp().OnOpenButton();
@@ -988,9 +1006,68 @@ static void OnCubeButton( wxCommandEvent& event )
 static void OnCylButton( wxCommandEvent& event )
 {
 	gp_Trsf mat = wxGetApp().GetDrawMatrix(true);
-	CCylinder* new_object = new CCylinder(gp_Ax2(gp_Pnt(0, 0, 0).Transformed(mat), gp_Dir(0, 0, 1).Transformed(mat), gp_Dir(1, 0, 0).Transformed(mat)), 5, 10, _("Cylinder"), HeeksColor(191, 191, 240), 1.0f);
-	AddObjectFromButton(new_object);
+
+    bool non_points_found = false;
+    std::list<HeeksObj *> marked_list = heekscad_interface.GetMarkedList();
+    std::list<HeeksObj *> points;
+    for (std::list<HeeksObj *>::iterator itObject = marked_list.begin(); itObject != marked_list.end(); itObject++)
+    {
+        HeeksObj *object = *itObject;
+        if (object->GetType() != PointType)
+        {
+            non_points_found = true;
+        }
+        else
+        {
+            points.push_back(object);
+        }
+    }
+
+    if ((non_points_found) || (points.size() == 0))
+    {
+        double position[3];
+        memset( position, 0, sizeof(position) );
+        // pick "from" position
+        if(!wxGetApp().PickPosition(_("Click position"), position))return;
+
+        wxGetApp().CreateUndoPoint();
+        CCylinder* new_object = new CCylinder(gp_Ax2(gp_Pnt(position[0], position[1], position[2]), gp_Dir(0, 0, 1).Transformed(mat), gp_Dir(1, 0, 0).Transformed(mat)), 0, 0, _("Cylinder"), HeeksColor(191, 191, 240), 1.0f);
+        AddObjectFromButton(new_object);
+        wxGetApp().Changed();
+    }
+    else
+    {
+        // Place a cylinder at all the selected point locations.
+        wxGetApp().CreateUndoPoint();
+        for (std::list<HeeksObj *>::iterator itPoint = points.begin(); itPoint != points.end(); itPoint++)
+        {
+            HPoint *point = (HPoint *) *itPoint;
+
+            CCylinder* new_object = new CCylinder(gp_Ax2(point->m_p, gp_Dir(0, 0, 1).Transformed(mat), gp_Dir(1, 0, 0).Transformed(mat)), 0, 0, _("Cylinder"), HeeksColor(191, 191, 240), 1.0f);
+            wxGetApp().Add(new_object, NULL);
+            new_object->OnApplyProperties();
+        }
+        wxGetApp().Changed();
+    }
 }
+
+
+static void OnBoltButton( wxCommandEvent& event )
+{
+	gp_Trsf mat = wxGetApp().GetDrawMatrix(true);
+
+	double position[3];
+	memset( position, 0, sizeof(position) );
+	// pick "from" position
+	if(!wxGetApp().PickPosition(_("Click position"), position))return;
+
+	BoltParams parameters = {BoltParams::ISO7380, _T("M3 x 0.5"), 3.0, 1.0, 5.7, 1.65, 2.045, 6.0 };
+	wxGetApp().CreateUndoPoint();
+	CBolt* new_object = new CBolt(gp_Ax2(gp_Pnt(position[0], position[1], position[2]), gp_Dir(0, 0, 1).Transformed(mat), gp_Dir(1, 0, 0).Transformed(mat)), parameters, parameters.m_size, HeeksColor(191, 191, 240), 1.0f);
+	AddObjectFromButton(new_object);
+	wxGetApp().Changed();
+}
+
 
 static void OnConeButton( wxCommandEvent& event )
 {
@@ -1613,10 +1690,10 @@ void CHeeksFrame::OnChangeBitmapSize()
 		wxGetApp().RemoveHideableWindow(toolbar);
 	}
 
-	if(!m_main_toolbar_removed)delete m_toolBar;
-	if(!m_geometry_toolbar_removed)delete m_geometryBar;
-	if(!m_solid_toolbar_removed)delete m_solidBar;
-	if(!m_viewing_toolbar_removed)delete m_viewingBar;
+	if(!m_main_toolbar_removed) { delete m_toolBar; m_toolBar = NULL; }
+	if(!m_geometry_toolbar_removed) {delete m_geometryBar; m_geometryBar = NULL; }
+	if(!m_solid_toolbar_removed) { delete m_solidBar; m_solidBar = NULL; }
+	if(!m_viewing_toolbar_removed) { delete m_viewingBar; m_viewingBar = NULL; }
 
 	wxGetApp().m_external_toolbars.clear();
 
@@ -1697,11 +1774,11 @@ void CHeeksFrame::MakeMenus()
 
 	wxMenu *coordinate_menu = new wxMenu;
 	//AddMenuItem(coordinate_menu, _("Add Coordinate System"), ToolImage(_T("coordsys")), coordinate_menu);
-	
+
 	AddMenuItem(coordinate_menu, _("Pick 3 points"), ToolImage(_T("coordsys")), OnCoordinateSystem);
 	//coordinate_menu->AppendSeparator();
 	AddMenuItem(coordinate_menu, _("Pick 1 point"), ToolImage(_T("coordsys")), OnNewOrigin);
-	
+
 	// View Menu
 	wxMenu *view_menu = new wxMenu;
 	AddMenuItem(view_menu, _("Previous view"), ToolImage(_T("magprev")), OnMagPreviousButton);
@@ -1709,10 +1786,10 @@ void CHeeksFrame::MakeMenus()
 	AddMenuItem(view_menu, _("Zoom window"), ToolImage(_T("mag")), OnMagButton);
 	AddMenuItem(view_menu, _("Fit view to extents"), ToolImage(_T("magextents")), OnMagExtentsButton);
 	AddMenuItem(view_menu, _("Fit view to extents, but no rotation"), ToolImage(_T("magnorot")), OnMagNoRotButton);
-	AddMenuItem(view_menu, _("View XY Front"), ToolImage(_T("magxy")),       OnMagXYButton );
-	AddMenuItem(view_menu, _("View XY Back"), ToolImage(_T("magxym")),       OnMagXYMButton);
-	AddMenuItem(view_menu, _("View XZ Top"), ToolImage(_T("magxz")),         OnMagXZButton );
-	AddMenuItem(view_menu, _("View XZ Bottom"), ToolImage(_T("magxzm")),     OnMagXZMButton);
+	AddMenuItem(view_menu, _("View XY Top"), ToolImage(_T("magxy")),       OnMagXYButton );
+	AddMenuItem(view_menu, _("View XY Bottom"), ToolImage(_T("magxym")),       OnMagXYMButton);
+	AddMenuItem(view_menu, _("View XZ Back"), ToolImage(_T("magxz")),         OnMagXZButton );
+	AddMenuItem(view_menu, _("View XZ Front"), ToolImage(_T("magxzm")),     OnMagXZMButton);
 	AddMenuItem(view_menu, _("View YZ Right"), ToolImage(_T("magyz")),       OnMagYZButton );
 	AddMenuItem(view_menu, _("View YZ Left"), ToolImage(_T("magyzm")),       OnMagYZMButton);
 	AddMenuItem(view_menu, _("View XZY Isometric"), ToolImage(_T("magxyz")), OnMagXYZButton);
@@ -1729,6 +1806,7 @@ void CHeeksFrame::MakeMenus()
 	AddMenuItem(solids_menu, _("Add a sphere"), ToolImage(_T("sphere")), OnSphereButton);
 	AddMenuItem(solids_menu, _("Add a cube"), ToolImage(_T("cube")), OnCubeButton);
 	AddMenuItem(solids_menu, _("Add a cylinder"), ToolImage(_T("cyl")), OnCylButton);
+	AddMenuItem(solids_menu, _("Add a bolt"), ToolImage(_T("cyl")), OnBoltButton);
 	AddMenuItem(solids_menu, _("Add a cone"), ToolImage(_T("cone")), OnConeButton);
 	solids_menu->AppendSeparator();
 	AddMenuItem(solids_menu, _("Loft two sketches"), ToolImage(_T("ruled")), OnRuledSurfaceButton);
@@ -1889,6 +1967,7 @@ void CHeeksFrame::AddToolBars()
 			flyout_list.m_list.push_back(CFlyOutItem(_T("sphere"), ToolImage(_T("sphere")), _("Add a sphere"), OnSphereButton));
 			flyout_list.m_list.push_back(CFlyOutItem(_T("cube"), ToolImage(_T("cube")), _("Add a cube"), OnCubeButton));
 			flyout_list.m_list.push_back(CFlyOutItem(_T("cyl"), ToolImage(_T("cyl")), _("Add a cylinder"), OnCylButton));
+			flyout_list.m_list.push_back(CFlyOutItem(_T("cyl"), ToolImage(_T("cyl")), _("Add a bolt"), OnBoltButton));
 			flyout_list.m_list.push_back(CFlyOutItem(_T("cone"), ToolImage(_T("cone")), _("Add a cone"), OnConeButton));
 			AddToolBarFlyout(m_solidBar, flyout_list);
 		}
@@ -1915,6 +1994,14 @@ void CHeeksFrame::AddToolBars()
 			flyout_list.m_list.push_back(CFlyOutItem(_T("Chamfer"), ToolImage(_T("chamfer")), _("Make a chamfer on selected edges"), OnChamferButton));
 			AddToolBarFlyout(m_solidBar, flyout_list);
 		}
+
+/*
+		{
+			CFlyOutList flyout_list(_T("SolidModels"));
+			flyout_list.m_list.push_back(CFlyOutItem(_T("Bolt"), ToolImage(_T("cyl")), _("Add a bolt"), OnBoltButton));
+			AddToolBarFlyout(m_solidBar, flyout_list);
+		}
+*/
 
 		m_solidBar->Realize();
 		m_aui_manager->AddPane(m_solidBar, wxAuiPaneInfo().Name(_T("SolidBar")).Caption(_("Solid Tools")).ToolbarPane().Top());

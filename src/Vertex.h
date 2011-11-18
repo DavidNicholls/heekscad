@@ -32,10 +32,12 @@ public:
 	const wxBitmap &GetIcon();
 	const wxChar* GetTypeString(void)const{return _("Vertex");}
 	bool UsesID(){return true;}
+	void GetTools(std::list<Tool*>* t_list, const wxPoint* p);
 
 	const TopoDS_Shape &Vertex(){return m_topods_vertex;}
 	CEdge* GetFirstEdge();
 	CEdge* GetNextEdge();
 	CShape* GetParentBody();
+
 };
 

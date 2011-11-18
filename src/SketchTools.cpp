@@ -19,6 +19,8 @@
 #include "SketchTools.h"
 #include "HSpline.h"
 
+#include <BRepProj_Projection.hxx>
+
 extern CHeeksCADInterface heekscad_interface;
 
 /**
@@ -283,6 +285,7 @@ static PocketSketch pocket_sketch;
 static FixWire fix_wire;
 static SimplifySketchTool simplify_sketch_tool;
 static SimplifySketchToBSplines simplify_sketch_to_bsplines_tool;
+static ProjectSketchOntoSolidTool project_sketch_onto_solid;
 
 
 
@@ -290,6 +293,7 @@ void GetSketchMenuTools(std::list<Tool*>* t_list){
 	int count=0;
 	bool gotsketch=false;
 	bool gotpart=false;
+	bool gotsolid=false;
 	// check to see what types have been marked
 	std::list<HeeksObj*>::const_iterator It;
 	for(It = wxGetApp().m_marked_list->list().begin(); It != wxGetApp().m_marked_list->list().end(); It++){
@@ -298,6 +302,8 @@ void GetSketchMenuTools(std::list<Tool*>* t_list){
 			gotsketch=true;
 		if(object->GetType() == PartType)
 			gotpart=true;
+        if((object->GetType() == SolidType) || (object->GetType() == StlSolidType))
+			gotsolid=true;
 		count++;
 	}
 
@@ -308,6 +314,11 @@ void GetSketchMenuTools(std::list<Tool*>* t_list){
 
         // t_list->push_back(&fix_wire);    /* This is not ready yet */
     }
+
+    if ((gotsolid) && (gotsketch))
+	{
+	    t_list->push_back(&project_sketch_onto_solid);
+	}
 
 	if(count == 2 && gotsketch && gotpart)
 		t_list->push_back(&add_to_part);
@@ -578,8 +589,11 @@ SimplifySketchTool::~SimplifySketchTool(void)
 }
 
 
-std::list<SimplifySketchTool::SortPoint> SimplifySketchTool::GetPoints( TopoDS_Wire wire, const double deviation )
+std::list<SimplifySketchTool::SortPoint> SimplifySketchTool::GetPoints( TopoDS_Wire wire, const double suggested_deviation )
 {
+	double deviation(suggested_deviation);
+	if (deviation < 0.0000001) deviation = 0.001;	// If it's zero then we enter an infinite loop.
+
 	std::list<SortPoint> points;
 
 	std::vector<TopoDS_Edge> edges = SortEdges(wire);
@@ -862,7 +876,7 @@ static void SimplifySketch(const double deviation, bool make_bspline )
 
 				if (points.size() >= 2)
 				{
-					
+
 
 
 				    if (make_bspline)
@@ -957,12 +971,14 @@ static void SimplifySketch(const double deviation, bool make_bspline )
 
 void SimplifySketchTool::Run()
 {
+	if (m_deviation == 0.0) m_deviation = 0.001;
     SimplifySketch(m_deviation, false);
 } // End Run() method
 
 
 void SimplifySketchToBSplines::Run()
 {
+	if (m_deviation == 0.0) m_deviation = 0.001;
     SimplifySketch(m_deviation, true);
 } // End Run() method
 
@@ -1051,5 +1067,103 @@ void SimplifySketchTool::SortPoint::ToDoubleArray( double *pArrayOfThree ) const
 } // End ToDoubleArray() method
 
 
+ProjectSketchOntoSolidTool::ProjectSketchOntoSolidTool()
+{
+	m_deviation = sketch_tool_options.m_max_deviation;
+}
 
+ProjectSketchOntoSolidTool::~ProjectSketchOntoSolidTool(void)
+{
+}
+
+void ProjectSketchOntoSolidTool::Run()
+{
+	if (m_deviation == 0.0) m_deviation = 0.001;
+
+    // The operator must have previously selected at least one sketch and at least one solid.
+    std::list<HeeksObj *> selected_objects = wxGetApp().m_marked_list->list();
+    std::list<HeeksObj *> solids;
+    std::list<HeeksObj *> sketches;
+
+    for (std::list<HeeksObj *>::iterator itObject = selected_objects.begin(); itObject != selected_objects.end(); itObject++)
+    {
+        if ((*itObject)->GetType() == SketchType)
+        {
+            sketches.push_back(*itObject);
+        }
+
+        if (((*itObject)->GetType() == SolidType) || ((*itObject)->GetType() == StlSolidType))
+        {
+            solids.push_back(*itObject);
+        }
+    }
+
+    if ((sketches.size() == 0) || (solids.size() == 0))
+    {
+        wxMessageBox(_("Must select at least one sketch and one solid"));
+        return;
+    }
+
+    eAxis_t axis(eZAxis);
+    gp_Dir direction(gp_XYZ(0.0, 0.0, 1.0));
+    wxGetApp().InputAxis(_("Axis to project along"), &axis);
+
+    switch (axis)
+    {
+        case eXAxis:
+            direction = gp_Dir(gp_XYZ(1.0,0.0,0.0));
+            break;
+
+        case eYAxis:
+            direction = gp_Dir(gp_XYZ(0.0,1.0,0.0));
+            break;
+
+        case eZAxis:
+            direction = gp_Dir(gp_XYZ(0.0,0.0,1.0));
+            break;
+    }
+
+    wxGetApp().CreateUndoPoint();
+    for (std::list<HeeksObj *>::iterator itSolid = solids.begin(); itSolid != solids.end(); itSolid++)
+    {
+        CSolid *solid = (CSolid *) *itSolid;
+        for (std::list<HeeksObj *>::iterator itSketch = sketches.begin(); itSketch != sketches.end(); itSketch++)
+        {
+            CSketch *sketch = (CSketch *) *itSketch;
+            std::list<TopoDS_Shape> wires;
+            if(ConvertSketchToFaceOrWire(sketch, wires, false))
+            {
+                for(std::list<TopoDS_Shape>::iterator It2 = wires.begin(); It2 != wires.end(); It2++)
+                {
+                    TopoDS_Shape& wire = *It2;
+
+                    BRepProj_Projection project(TopoDS::Wire(wire), solid->Shape(), direction);
+                    if (project.IsDone())
+                    {
+                        project.Init();
+                        while (project.More())
+                        {
+                            TopoDS_Shape shape(project.Current());
+                            TopoDS_Wire projected_wire = TopoDS::Wire(shape);
+                            HeeksObj *new_sketch = heekscad_interface.NewSketch();
+                            if (heekscad_interface.ConvertWireToSketch(projected_wire, new_sketch, 0.001))
+                            {
+                                wxString title;
+                                title << sketch->GetShortString() << _(" projected onto ") << solid->m_title;
+                                new_sketch->OnEditString(title);
+                                heekscad_interface.Add(new_sketch, NULL);
+                            }
+                            project.Next();
+                        }
+                    }
+                }
+
+            }
+
+
+
+        }
+    }
+    wxGetApp().Changed();
+} // End Run() method
 

@@ -17,6 +17,8 @@ bool HDimension::DrawFlat = true;
 
 HDimension::HDimension(const gp_Trsf &trsf, const gp_Pnt &p0, const gp_Pnt &p1, const gp_Pnt &p2, DimensionMode mode, DimensionTextMode text_mode, DimensionUnits units, const HeeksColor* col): EndedObject(col), m_color(*col), m_trsf(trsf), m_mode(mode), m_text_mode(text_mode),  m_units(units),  m_scale(1.0)
 {
+    set_initial_values();
+
 	m_p2 = new HPoint(p2,col);
 	m_p2->m_draw_unselected = false;
 	m_p2->SetSkipForUndo(true);
@@ -36,22 +38,26 @@ HDimension::~HDimension(void)
 
 const HDimension& HDimension::operator=(const HDimension &b)
 {
-	EndedObject::operator=(b);
-	m_trsf = b.m_trsf;
-	m_text_mode = b.m_text_mode;
-	m_units = b.m_units;
-	m_color = b.m_color;
-	m_mode = b.m_mode;
-	m_scale = b.m_scale;
+    if (this != &b)
+    {
+        EndedObject::operator=(b);
+        m_trsf = b.m_trsf;
+        m_text_mode = b.m_text_mode;
+        m_units = b.m_units;
+        m_color = b.m_color;
+        m_mode = b.m_mode;
+        m_scale = b.m_scale;
 
-#ifdef MULTIPLE_OWNERS
-	std::list<HeeksObj*>::iterator it = m_objects.begin();
-	it++;it++;
-	m_p2 = (HPoint*)(*it);
-#endif
+    #ifdef MULTIPLE_OWNERS
+        std::list<HeeksObj*>::iterator it = m_objects.begin();
+        it++;it++;
+        m_p2 = (HPoint*)(*it);
+    #endif
+    }
 
 	return *this;
 }
+
 
 const wxBitmap &HDimension::GetIcon()
 {
@@ -140,7 +146,7 @@ gp_Pnt HDimension::GetC2()
 void HDimension::glCommands(bool select, bool marked, bool no_color)
 {
 	gp_Pnt b = GetB2();
-	
+
 	if(A->m_p.IsEqual(b, wxGetApp().m_geom_tol))return;
 
 	if(!no_color)wxGetApp().glColorEnsuringContrast(m_color);
@@ -211,7 +217,7 @@ void HDimension::RenderText(const wxString &text, const gp_Pnt& p, const gp_Dir&
 	}
 	else
 	{
-		wxGetApp().render_text(text);
+		wxGetApp().render_text(text, float(scale));
 	}
 
 	glPopMatrix();
@@ -359,6 +365,7 @@ static void on_set_scale(double value, HeeksObj* object)
 	HDimension* dimension = (HDimension*)object;
 	dimension->m_scale = value;
 	wxGetApp().Repaint();
+	dimension->write_values_to_config();
 }
 
 #ifdef MULTIPLE_OWNERS
@@ -729,4 +736,21 @@ void HDimension::WriteToConfig(HeeksConfig& config)
 void HDimension::ReadFromConfig(HeeksConfig& config)
 {
 	config.Read(_T("DimensionDrawFlat"), &DrawFlat, false);
+}
+
+void HDimension::set_initial_values()
+{
+	HeeksConfig config;
+
+	config.Read(_T("HDimension_scale"), &m_scale, 1.0);
+
+}
+
+void HDimension::write_values_to_config()
+{
+	// We always want to store the parameters in mm and convert them back later on.
+
+	HeeksConfig config;
+
+	config.Write(_T("HDimension_scale"), m_scale);
 }

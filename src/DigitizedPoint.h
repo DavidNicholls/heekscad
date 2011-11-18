@@ -15,6 +15,7 @@ enum DigitizeType{
 	DigitizeCoordsType,
 	DigitizeNearestType,
 	DigitizeTangentType,
+	DigitizeLocatedType,	// found from right menu button above a pre-existing point location.
 	DigitizeInputType // typed into properties, for example
 };
 

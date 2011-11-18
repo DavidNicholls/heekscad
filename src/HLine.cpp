@@ -121,6 +121,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( midpoint );
+		}
 	}
 	const wxChar* GetTitle(){return _("Click Midpoint On Line");}
 	wxString BitmapPath(){return _T("click_line_midpoint");}
@@ -136,6 +145,15 @@ public:
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( line_for_tool->A->m_p );
 		}
 	}
 	const wxChar* GetTitle(){return _("Click Start Of Line");}
@@ -153,11 +171,111 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( line_for_tool->B->m_p );
+		}
 	}
 	const wxChar* GetTitle(){return _("Click End Of Line");}
 	wxString BitmapPath(){return _T("click_line_end_two");}
 };
 static ClickEndPointOnLine click_end_point_on_line;
+
+
+
+
+
+
+
+
+class OffsetFromMidpointOnLine:public Tool{
+public:
+	void Run(){
+		gp_Pnt midpoint((line_for_tool->A->m_p.XYZ() + line_for_tool->B->m_p.XYZ()) /2);
+
+		gp_Pnt location = HPoint::GetOffset(midpoint);
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+	const wxChar* GetTitle(){return _("Offset From Midpoint On Line");}
+	wxString BitmapPath(){return _T("click_line_midpoint");}
+};
+static OffsetFromMidpointOnLine offset_from_midpoint_on_line;
+
+
+class OffsetFromStartPointOnLine:public Tool{
+public:
+	void Run(){
+		gp_Pnt location = HPoint::GetOffset(line_for_tool->A->m_p);
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+	const wxChar* GetTitle(){return _("Offset From Start Of Line");}
+	wxString BitmapPath(){return _T("click_line_end_one");}
+};
+static OffsetFromStartPointOnLine offset_from_start_point_on_line;
+
+
+class OffsetFromEndPointOnLine:public Tool{
+public:
+	void Run(){
+		gp_Pnt location = HPoint::GetOffset(line_for_tool->B->m_p);
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+	const wxChar* GetTitle(){return _("Offset From End Of Line");}
+	wxString BitmapPath(){return _T("click_line_end_two");}
+};
+static OffsetFromEndPointOnLine offset_from_end_point_on_line;
+
+
 
 
 
@@ -186,11 +304,18 @@ void HLine::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 	t_list->push_back(&make_cone_on_line);
 
 	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
-	if (pDrawingMode != NULL)
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
 	{
 		t_list->push_back(&click_start_point_on_line);
+		t_list->push_back(&offset_from_start_point_on_line);
+
 		t_list->push_back(&click_midpoint_on_line);
+		t_list->push_back(&offset_from_midpoint_on_line);
+
 		t_list->push_back(&click_end_point_on_line);
+		t_list->push_back(&offset_from_end_point_on_line);
 	}
 }
 

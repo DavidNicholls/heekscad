@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
+#include <wx/string.h>
 
 //Following is required to be defined on Ubuntu with OCC 6.3.1
 #ifndef HAVE_IOSTREAM
@@ -142,14 +143,14 @@ public:
 
 	bool IgnoreErrors() const { return(m_ignore_errors); }
 
-	virtual void OnReadLine(const double* s, const double* e){}
-	virtual void OnReadPoint(const double* s){}
-	virtual void OnReadText(const double* point, const double height, const char* text){}
-	virtual void OnReadArc(const double* s, const double* e, const double* c, bool dir){}
-	virtual void OnReadCircle(const double* s, const double* c, bool dir){}
-	virtual void OnReadEllipse(const double* c, double major_radius, double minor_radius, double rotation, double start_angle, double end_angle, bool dir){}
-	virtual void OnReadSpline(struct SplineData& sd){}
-	virtual void AddGraphics() const { }
+	virtual void OnReadLine(const double* s, const double* e) = 0;
+	virtual void OnReadPoint(const double* s) = 0;
+	virtual void OnReadText(const double* point, const double height, const wxChar* text) = 0;
+	virtual void OnReadArc(const double* s, const double* e, const double* c, bool dir) = 0;
+	virtual void OnReadCircle(const double* s, const double* c, bool dir) = 0;
+	virtual void OnReadEllipse(const double* c, double major_radius, double minor_radius, double rotation, double start_angle, double end_angle, bool dir) = 0;
+	virtual void OnReadSpline(struct SplineData& sd) = 0;
+	virtual void AddGraphics() const = 0;
 
     std::string LayerName() const;
 

@@ -197,8 +197,50 @@ void GripperSelTransform::MakeMatrix ( const double* from, const double* to, con
 	switch ( m_data.m_type )
 	{
 	case GripperTypeTranslate:
-		mat.SetTranslation ( gp_Vec ( make_point ( from ), make_point ( to ) ) );
+	{
+	    gp_Pnt _from(make_point(from));
+	    gp_Pnt _to(make_point(to));
+
+	    // See if the X, Y or Z keys are currently pressed.  If so, zero out the other
+	    // axes values so that the translation is limited to this one axis.
+
+	    switch (wxGetApp().m_depressed_key)
+	    {
+	        case 'x':
+	        case 'X':
+                _from.SetY(0.0);
+                _from.SetZ(0.0);
+
+                _to.SetY(0.0);
+                _to.SetZ(0.0);
+                break;
+
+            case 'y':
+	        case 'Y':
+                _from.SetX(0.0);
+                _from.SetZ(0.0);
+
+                _to.SetX(0.0);
+                _to.SetZ(0.0);
+                break;
+
+            case 'z':
+	        case 'Z':
+                _from.SetX(0.0);
+                _from.SetY(0.0);
+
+                _to.SetX(0.0);
+                _to.SetY(0.0);
+                break;
+
+            default:
+                // No alignment needed.
+                break;
+	    }
+
+		mat.SetTranslation ( gp_Vec ( _from, _to ) );
 		break;
+	}
 	case GripperTypeScale:
 		{
 			gp_Trsf object_mat = make_matrix(object_m);

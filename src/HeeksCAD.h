@@ -76,6 +76,13 @@ enum SolidViewMode
 	SolidViewFacesOnly,
 };
 
+typedef enum
+{
+    eXAxis = 0,
+    eYAxis,
+    eZAxis
+} eAxis_t;
+
 class HeeksCADapp : public wxApp, public ObjList
 {
 private:
@@ -109,6 +116,7 @@ public:
 	wxPoint cur_mouse_pos;
 	HeeksColor current_color;
 	HeeksColor construction_color;
+	HeeksColor dimension_color;
 #define NUM_BACKGROUND_COLORS 10
 	HeeksColor background_color[NUM_BACKGROUND_COLORS];
 	BackgroundMode m_background_mode;
@@ -198,6 +206,7 @@ public:
 	bool m_input_uses_modal_dialog;
 	bool m_dragging_moves_objects;
 	bool m_no_creation_mode; // set from a plugin, for making an exporter only application
+	bool m_hide_verbose_help_text;
 
 	double m_min_correlation_factor;
 	double m_max_scale_threshold;
@@ -216,6 +225,9 @@ public:
 	std::auto_ptr<CAutoSave> m_pAutoSave;
 
 	bool m_save_constraints;
+
+	int m_depressed_key;   // eg: 'x', 'y', or 'z' for use in GraphicsCanvas::OnKeyDown() and OnKeyUP() = 0 when nothing is pressed.
+	long m_previous_selection_filter;
 
 	bool m_isModified;
 	bool m_isModifiedValid;
@@ -357,6 +369,7 @@ public:
 	bool InputDouble(const wxChar* prompt, const wxChar* value_name, double &value);
 	bool InputAngleWithPlane(double &angle, double *axis = NULL, double *pos = NULL, int *number_of_copies = NULL);
 	bool InputLength(const wxChar* prompt, const wxChar* value_name, double &value);
+	bool InputAxis(wxString dialog_title, eAxis_t *axis);
 	void ShowModalOptions();
 	void SectioningDialog();
 	void RegisterOnGLCommands( void(*callbackfunc)() );
@@ -376,7 +389,7 @@ public:
 	bool CheckForNOrMore(const std::list<HeeksObj*> &list, int min_num, int type, const wxString& msg, const wxString& caption);
 	bool CheckForNOrMore(const std::list<HeeksObj*> &list, int min_num, int type1, int type2, const wxString& msg, const wxString& caption);
 	bool CheckForNOrMore(const std::list<HeeksObj*> &list, int min_num, int type1, int type2, int type3, const wxString& msg, const wxString& caption);
-	void render_text(const wxChar* str);
+	void render_text(const wxChar* str, const float scale = 1.0);
 	bool get_text_size(const wxChar* str, float* width, float* height);
 	void render_screen_text(const wxChar* str1, const wxChar* str2);
 	void render_screen_text_at(const wxChar* str1, double scale, double x, double y, double theta);

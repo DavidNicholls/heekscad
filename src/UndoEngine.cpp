@@ -323,9 +323,9 @@ void UndoEngine::DoEvents(std::vector<UndoEvent> &events, EventTreeMap* tree)
 					tree->m_treemap[GetHeeksObjId(new_obj)] = new_obj;
 					new_obj->ReloadPointers();
 #ifdef MULTIPLE_OWNERS
-					new_obj->Owner()->ReloadPointers();
+					if (new_obj->Owner()) new_obj->Owner()->ReloadPointers();
 #else
-					new_obj->m_owner->ReloadPointers();
+					if (new_obj->m_owner) new_obj->m_owner->ReloadPointers();
 #endif
 				}
 				break;

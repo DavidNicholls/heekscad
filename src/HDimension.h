@@ -42,7 +42,7 @@ public:
 	DimensionMode m_mode;
 	DimensionTextMode m_text_mode;
 	DimensionUnits m_units;
-	double m_scale; // to do - text, gaps, and arrow heads will be scaled by this factor
+	double m_scale; // to do - gaps, and arrow heads will be scaled by this factor
 	static bool DrawFlat;
 
 	HDimension(const gp_Trsf &trsf, const gp_Pnt &p0, const gp_Pnt &p1, const gp_Pnt &p2, DimensionMode mode, DimensionTextMode text_mode, DimensionUnits units, const HeeksColor* col);
@@ -88,4 +88,6 @@ public:
 	static void draw_arrow_line(DimensionMode mode, const gp_Pnt &p0, const gp_Pnt &p1, const gp_Pnt &p2, const gp_Dir &xdir, const gp_Dir &ydir, double width, double scale);
 	static void WriteToConfig(HeeksConfig& config);
 	static void ReadFromConfig(HeeksConfig& config);
+	void set_initial_values();
+    void write_values_to_config();
 };

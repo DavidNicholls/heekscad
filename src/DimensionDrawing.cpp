@@ -40,7 +40,7 @@ bool DimensionDrawing::calculate_item(DigitizedPoint &end)
 
 	// make sure dimension exists
 	if(!temp_object){
-		temp_object = new HDimension(mat, gp_Pnt(0, 0, 0), gp_Pnt(0, 0, 0), gp_Pnt(0, 0, 0), m_mode, m_text_mode, DimensionUnitsGlobal, &(wxGetApp().current_color));
+		temp_object = new HDimension(mat, gp_Pnt(0, 0, 0), gp_Pnt(0, 0, 0), gp_Pnt(0, 0, 0), m_mode, m_text_mode, DimensionUnitsGlobal, &(wxGetApp().dimension_color));
 		if(temp_object)temp_object_in_list.push_back(temp_object);
 	}
 

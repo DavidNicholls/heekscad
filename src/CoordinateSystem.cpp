@@ -9,6 +9,9 @@
 #include "../interface/Tool.h"
 #include "HeeksFrame.h"
 #include "ObjPropsCanvas.h"
+#include "Drawing.h"
+#include "DigitizeMode.h"
+#include "HPoint.h"
 
 double CoordinateSystem::size = 30;
 bool CoordinateSystem::size_is_pixels = true;
@@ -35,10 +38,14 @@ CoordinateSystem::CoordinateSystem(const CoordinateSystem &c)
 
 const CoordinateSystem& CoordinateSystem::operator=(const CoordinateSystem &c)
 {
-	HeeksObj::operator=(c);
-	m_o = c.m_o;
-	m_x = c.m_x;
-	m_y = c.m_y;
+	if (this != &c)
+	{
+		HeeksObj::operator=(c);
+		m_o = c.m_o;
+		m_x = c.m_x;
+		m_y = c.m_y;
+	}
+
 	return *this;
 }
 
@@ -1207,6 +1214,11 @@ HeeksObj *CoordinateSystem::MakeACopy(void)const
 	return new CoordinateSystem(*this);
 }
 
+HeeksObj *CoordinateSystem::MakeACopyWithID()
+{
+	return new CoordinateSystem(*this);
+}
+
 void CoordinateSystem::ModifyByMatrix(const double *m)
 {
 	gp_Trsf mat = make_matrix(m);
@@ -1301,12 +1313,90 @@ public:
 
 static TransformToWorld transform_to_world;
 
+
+
+
+class ClickOnOrigin: public Tool
+{
+public:
+	CoordinateSystem *pCoordinateSystem;
+
+public:
+	void Run()
+	{
+		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(pCoordinateSystem->m_o, DigitizeInputType);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( pCoordinateSystem->m_o );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Click on origin");}
+	wxString BitmapPath(){return _T("click_point");}
+};
+
+ClickOnOrigin click_on_origin;
+
+
+class OffsetFromOnOrigin: public Tool
+{
+public:
+	CoordinateSystem *pCoordinateSystem;
+
+public:
+	void Run()
+	{
+		gp_Pnt location = HPoint::GetOffset(pCoordinateSystem->m_o);
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from origin");}
+	wxString BitmapPath(){return _T("offset_from_point");}
+};
+
+static OffsetFromOnOrigin offset_from_origin;
+
+
 void CoordinateSystem::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 {
 	coord_system_for_Tool = this;
 	t_list->push_back(&coord_system_3_points);
 	if(this != wxGetApp().m_current_coordinate_system)t_list->push_back(&coord_system_set);
 	if(wxGetApp().m_marked_list->list().size() > 0)t_list->push_back(&transform_to_world);
+
+	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
+	{
+		click_on_origin.pCoordinateSystem = this;
+		t_list->push_back(&click_on_origin);
+
+		offset_from_origin.pCoordinateSystem = this;
+		t_list->push_back(&offset_from_origin);
+	}
 }
 
 void CoordinateSystem::GetProperties(std::list<Property *> *list)
@@ -1353,7 +1443,7 @@ void CoordinateSystem::WriteXML(TiXmlNode *root)
 {
 	TiXmlElement * element;
 	element = new TiXmlElement( "CoordinateSystem" );
-	root->LinkEndChild( element );  
+	root->LinkEndChild( element );
 	element->SetAttribute("title", m_title.utf8_str() );
 	element->SetDoubleAttribute("ox", m_o.X());
 	element->SetDoubleAttribute("oy", m_o.Y());
@@ -1462,7 +1552,7 @@ void CoordinateSystem::AnglesToAxes(const double &v_angle, const double
 
 	x = gp_Dir(1, 0, 0).Transformed(mat);
 	y = gp_Dir(0, 1, 0).Transformed(mat);
-} 
+}
 
 static CoordinateSystem* coordinate_system_for_PickFrom3Points = NULL;
 static gp_Vec y_for_PickFrom3Points(0, 1, 0);
@@ -1598,7 +1688,7 @@ void CoordinateSystem::PickFrom1Point()
 	double pos[3];
 
 	wxGetApp().PickPosition(_("Pick the location"), pos, on_set_origin);
-	
+
 	*this = temp;
 	wxGetApp().RemoveOnGLCommands(OnGlCommandsForPickFrom3Points);
 

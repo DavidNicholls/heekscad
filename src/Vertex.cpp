@@ -6,6 +6,9 @@
 #include "Face.h"
 #include "Solid.h"
 #include "Gripper.h"
+#include "DigitizeMode.h"
+#include "Drawing.h"
+#include "HPoint.h"
 
 CVertex::CVertex(const TopoDS_Vertex &vertex):m_topods_vertex(vertex){
 	gp_Pnt pos = BRep_Tool::Pnt(vertex);
@@ -76,3 +79,78 @@ CShape* CVertex::GetParentBody()
 	return (CShape*)(m_owner->m_owner);
 #endif
 }
+
+
+class ClickVertexLocation:public Tool{
+public:
+	CVertex *which;
+
+public:
+	void Run(){
+		wxGetApp().m_digitizing->digitized_point = DigitizedPoint( gp_Pnt(which->m_point[0], which->m_point[1], which->m_point[2]), DigitizeInputType);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(which->m_point[0], which->m_point[1], which->m_point[2]) );
+		}
+	}
+	const wxChar* GetTitle(){return _("Click vertex location");}
+	wxString BitmapPath(){return _T("pickpos");}
+	const wxChar* GetToolTip(){return _("Click vertex location");}
+};
+static ClickVertexLocation click_vertex_location;
+
+class OffsetFromPoint:public Tool{
+public:
+	CVertex *which;
+
+public:
+	void Run(){
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
+		{
+			gp_Pnt location = HPoint::GetOffset(gp_Pnt(which->m_point[0], which->m_point[1], which->m_point[2]));
+		
+			if (pDrawingMode != NULL)
+			{
+				wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+				pDrawingMode->AddPoint();
+			}
+
+			if (pDigitizeMode != NULL)
+			{
+				pDigitizeMode->DigitizeToLocatedPosition( location );
+			}
+		}
+	}
+	const wxChar* GetTitle(){return _("Offset from vertex location");}
+	wxString BitmapPath(){return _T("pickpos");}
+	const wxChar* GetToolTip(){return _("Offset from vertex location");}
+};
+static OffsetFromPoint offset_from_point;
+
+
+void CVertex::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
+{
+	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
+	{
+		click_vertex_location.which = this;
+		t_list->push_back(&click_vertex_location);
+		
+		offset_from_point.which = this;
+		t_list->push_back(&offset_from_point);
+	}
+}
+

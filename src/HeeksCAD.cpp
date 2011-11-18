@@ -66,6 +66,8 @@
 #include "OrientationModifier.h"
 #include "MenuSeparator.h"
 #include "HGear.h"
+#include "Bolt.h"
+
 
 using namespace std;
 
@@ -111,7 +113,9 @@ HeeksCADapp::HeeksCADapp(): ObjList()
 	_CrtSetAllocHook(MyAllocHook);
 #endif
 
-	m_version_number = _T("0 18 0");
+	Py_Initialize();
+
+	m_version_number = _T("0 17 109");
 	m_geom_tol = 0.000001;
 	TiXmlBase::SetRequiredDecimalPlaces( DecimalPlaces(m_geom_tol) );	 // Ensure we write XML in enough accuracy to be useful when re-read.
 
@@ -197,6 +201,14 @@ HeeksCADapp::HeeksCADapp(): ObjList()
 	m_extrude_to_solid = true;
 	m_revolve_angle = 360.0;
 
+	{
+		wxGetApp().m_hide_verbose_help_text = false;
+		HeeksConfig config;
+		config.Read(_T("HideVerboseHelpText"), &(wxGetApp().m_hide_verbose_help_text));
+	}
+
+	m_depressed_key = 0;    // Nothing is pressed.
+	m_previous_selection_filter = 0;    // Nothing remembered.
 
     {
         std::list<wxString> extensions;
@@ -343,6 +355,19 @@ bool HeeksCADapp::OnInit()
 		config.Read(_T("FaceSelectionColor"), &color);
 		face_selection_color = HeeksColor((long)color);
 	}
+
+	{
+		wxString str;
+		config.Read(_T("DimensionColor"), &str, _T("191 240 191"));
+		int r = 191, g = 240, b = 191;
+#if wxUSE_UNICODE
+		swscanf(str, _T("%d %d %d"), &r, &g, &b);
+#else
+		sscanf(str, _T("%d %d %d"), &r, &g, &b);
+#endif
+		dimension_color = HeeksColor((unsigned char)r, (unsigned char)g, (unsigned char)b);
+	}
+
 	config.Read(_T("RotateMode"), &m_rotate_mode);
 	config.Read(_T("Antialiasing"), &m_antialiasing);
 	config.Read(_T("GridMode"), &grid_mode);
@@ -469,7 +494,7 @@ bool HeeksCADapp::OnInit()
 			}
 		}
 	}
-	//#define USE_DEBUG_WXPATH  
+	//#define USE_DEBUG_WXPATH
 	#ifdef USE_DEBUG_WXPATH
 		// this next bit is just to help debug the icons problem
 		// the wxStandardPaths class might be useful for this
@@ -491,7 +516,7 @@ bool HeeksCADapp::OnInit()
 		wprintf(_T("user local data directory: ") + sp.GetUserLocalDataDir()  + _T("\n"));
 	#endif
 #endif
-	
+
 	return TRUE;
 }
 
@@ -524,6 +549,7 @@ void HeeksCADapp::WriteConfig()
 	config.Write(_T("FaceSelectionColor"), face_selection_color.COLORREF_color());
 	config.Write(_T("CurrentColor"), wxString::Format( _T("%d %d %d"), current_color.red, current_color.green, current_color.blue));
 	config.Write(_T("ConstructionColor"), wxString::Format(_T("%d %d %d"), construction_color.red, construction_color.green, construction_color.blue));
+	config.Write(_T("DimensionColor"), wxString::Format( _T("%d %d %d"), dimension_color.red, dimension_color.green, dimension_color.blue));
 	config.Write(_T("RotateMode"), m_rotate_mode);
 	config.Write(_T("Antialiasing"), m_antialiasing);
 	config.Write(_T("GridMode"), grid_mode);
@@ -2494,6 +2520,11 @@ void on_set_construction_color(HeeksColor value, HeeksObj* object)
 	wxGetApp().construction_color = value;
 }
 
+void on_set_dimension_color(HeeksColor value, HeeksObj* object)
+{
+	wxGetApp().dimension_color = value;
+}
+
 void on_set_grid_mode(int value, HeeksObj* object)
 {
 	wxGetApp().grid_mode = value;
@@ -2945,6 +2976,14 @@ static void on_dragging_moves_objects(bool value, HeeksObj* object)
 	wxGetApp().Repaint();
 }
 
+static void on_set_hide_verbose_help_text(bool value, HeeksObj* object)
+{
+	wxGetApp().m_hide_verbose_help_text = value;
+	wxGetApp().Repaint();
+	HeeksConfig config;
+	config.Write(_T("HideVerboseHelpText"), wxGetApp().m_hide_verbose_help_text);
+}
+
 static void on_edit_font_paths(const wxChar* value, HeeksObj* object)
 {
 	wxGetApp().m_font_paths.assign(value);
@@ -3114,6 +3153,7 @@ void HeeksCADapp::GetOptions(std::list<Property *> *list)
 	}
 	view_options->m_list.push_back(new PropertyCheck(_("input uses modal dialog"), m_input_uses_modal_dialog, NULL, on_input_uses_modal_dialog));
 	view_options->m_list.push_back(new PropertyCheck(_("dragging moves objects"), m_dragging_moves_objects, NULL, on_dragging_moves_objects));
+	view_options->m_list.push_back(new PropertyCheck(_("hide verbose help text"), m_hide_verbose_help_text, NULL, on_set_hide_verbose_help_text));
 
 	list->push_back(view_options);
 
@@ -3143,6 +3183,7 @@ void HeeksCADapp::GetOptions(std::list<Property *> *list)
 	PropertyList* drawing = new PropertyList(_("drawing"));
 	drawing->m_list.push_back ( new PropertyColor ( _("current color"),  current_color, NULL, on_set_current_color ) );
 	drawing->m_list.push_back ( new PropertyColor ( _("construction color"),  construction_color, NULL, on_set_construction_color ) );
+	drawing->m_list.push_back ( new PropertyColor ( _("dimension color"),  dimension_color, NULL, on_set_dimension_color ) );
 	drawing->m_list.push_back(new PropertyLength(_("geometry tolerance"), m_geom_tol, NULL, on_set_geom_tol));
 	drawing->m_list.push_back(new PropertyLength(_("face to sketch deviaton"), FaceToSketchTool::deviation, NULL, on_set_face_to_sketch_deviation));
 	drawing->m_list.push_back(new PropertyCheck(_("Use old solid fuse ( to prevent coplanar faces )"), useOldFuse, NULL, on_useOldFuse));
@@ -3595,6 +3636,7 @@ bool HeeksCADapp::PickPosition(const wxChar* str, double* pos, void(*callback)(c
 	bool return_found = false;
 	if(m_digitizing->digitized_point.m_type != DigitizeNoItemType){
 		extract(m_digitizing->digitized_point.m_point, pos);
+		m_digitizing->reference_point = m_digitizing->digitized_point;
 		return_found = true;
 	}
 
@@ -4102,7 +4144,7 @@ void HeeksCADapp::create_font()
 	m_gl_font_initialized = true;
 }
 
-void HeeksCADapp::render_text(const wxChar* str)
+void HeeksCADapp::render_text(const wxChar* str, const float scale /* = 1.0 */ )
 {
 	//Needs to be called before text output
 	create_font();
@@ -4114,7 +4156,7 @@ void HeeksCADapp::render_text(const wxChar* str)
 	m_gl_font.Begin();
 
 	//Draws text with a glFont
-	m_gl_font.DrawString(str, 0.08f, 0.0f, 0.0f);
+	m_gl_font.DrawString(str, float(scale * 0.08), 0.0f, 0.0f);
 
 	glDepthMask(1);
 	glEnable(GL_POLYGON_OFFSET_FILL);
@@ -4282,7 +4324,6 @@ std::auto_ptr<VectorFonts>	& HeeksCADapp::GetAvailableFonts(const bool force_rea
 							paths.size(),
 							NULL,
 							wxPD_APP_MODAL | wxPD_ELAPSED_TIME | wxPD_ESTIMATED_TIME | wxPD_REMAINING_TIME | wxPD_AUTO_HIDE );
-
             int i=0;
             for (std::vector<wxString>::const_iterator l_itPath = paths.begin(); l_itPath != paths.end(); l_itPath++)
             {

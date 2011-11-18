@@ -490,6 +490,14 @@
 			>
 		</File>
 		<File
+			RelativePath=".\Bolt.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\Bolt.h"
+			>
+		</File>
+		<File
 			RelativePath="..\interface\Box.h"
 			>
 		</File>
@@ -1354,11 +1362,27 @@
 			>
 		</File>
 		<File
+			RelativePath="..\interface\PropertyDir.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\interface\PropertyDir.h"
+			>
+		</File>
+		<File
 			RelativePath="..\interface\PropertyDouble.cpp"
 			>
 		</File>
 		<File
 			RelativePath="..\interface\PropertyDouble.h"
+			>
+		</File>
+		<File
+			RelativePath="..\interface\PropertyFile.cpp"
+			>
+		</File>
+		<File
+			RelativePath="..\interface\PropertyFile.h"
 			>
 		</File>
 		<File
@@ -1463,6 +1487,10 @@
 		</File>
 		<File
 			RelativePath=".\RS274X.cpp"
+			>
+		</File>
+		<File
+			RelativePath=".\RS274X.h"
 			>
 		</File>
 		<File

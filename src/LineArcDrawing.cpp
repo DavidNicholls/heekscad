@@ -38,6 +38,7 @@ LineArcDrawing::LineArcDrawing(void){
 	m_previous_direction = gp_Vec(1, 0, 0);
 	drawing_mode = LineDrawingMode;
 	m_A_down = false;
+	m_R_down = false;   // Reverse arc drawing mode
 	m_container = NULL;
 	radius_for_circle = 5.0;
 	circle_mode = ThreePointsCircleMode;
@@ -138,6 +139,7 @@ int LineArcDrawing::step_to_go_to_after_last_step()
 	{
 	case LineDrawingMode:
 	case ArcDrawingMode:
+	case ReverseArcDrawingMode:
 		return 1;
 	case SplineDrawingMode:
 		return 3;
@@ -220,6 +222,7 @@ void LineArcDrawing::AddPoint()
 
 	case LineDrawingMode:
 	case ArcDrawingMode:
+	case ReverseArcDrawingMode:
 		{
 			// edit the end of the previous item to be the start of the arc
 			// this only happens if we are drawing tangents to other objects
@@ -305,6 +308,7 @@ bool LineArcDrawing::calculate_item(DigitizedPoint &end){
 		return true;
 
 	case ArcDrawingMode:
+	case ReverseArcDrawingMode:
 		{
 			// tangential arcs
 			if(temp_object && temp_object->GetType() != ArcType){
@@ -323,6 +327,12 @@ bool LineArcDrawing::calculate_item(DigitizedPoint &end){
 			{
 				if(HArc::TangentialArc(p1, m_previous_direction, p2, centre, axis))
 				{
+				    if (drawing_mode == ReverseArcDrawingMode)
+				    {
+				        // Reverse the axis of the circle so that the arc rotates the other way around.
+				        axis.Reverse();
+				    }
+
 					// arc
 					gp_Circ circle(gp_Ax2(centre, axis), centre.Distance(p1));
 
@@ -572,6 +582,13 @@ const wxChar* LineArcDrawing::GetTitle()
 		else str_for_GetTitle.Append(wxString(_("click on end of arc")));
 		return str_for_GetTitle;
 
+    case ReverseArcDrawingMode:
+		str_for_GetTitle = wxString(_("Reverse Arc drawing mode"));
+		str_for_GetTitle.Append(wxString(_T(" : ")));
+		if(GetDrawStep() == 0)str_for_GetTitle.Append(wxString(_("click on start point")));
+		else str_for_GetTitle.Append(wxString(_("click on end of arc")));
+		return str_for_GetTitle;
+
 	case ILineDrawingMode:
 		str_for_GetTitle = wxString(_("Infinite line drawing"));
 		str_for_GetTitle.Append(wxString(_T(" : ")));
@@ -678,17 +695,27 @@ const wxChar* LineArcDrawing::GetTitle()
 void LineArcDrawing::OnKeyDown(wxKeyEvent& event)
 {
 	switch(event.GetKeyCode()){
-	case 'A':
-		// switch to arc drawing mode until a is released
-		if(!m_A_down){
-			m_A_down = true;
-			m_save_drawing_mode.push_back(drawing_mode);
-			drawing_mode = ArcDrawingMode;
-			wxGetApp().m_frame->RefreshInputCanvas();
-			RecalculateAndRedraw(wxPoint(event.GetX(), event.GetY()));
-			wxGetApp().OnInputModeTitleChanged();
-		}
+	case 'R':
+        if(!m_R_down){
+            m_R_down = true;
+            m_save_drawing_mode.push_back(drawing_mode);
+            drawing_mode = ReverseArcDrawingMode;
+            wxGetApp().m_frame->RefreshInputCanvas();
+            RecalculateAndRedraw(wxPoint(event.GetX(), event.GetY()));
+            wxGetApp().OnInputModeTitleChanged();
+        }
 		return;
+
+    case 'A':
+        if(!m_A_down){
+            m_A_down = true;
+            m_save_drawing_mode.push_back(drawing_mode);
+            drawing_mode = ArcDrawingMode;
+            wxGetApp().m_frame->RefreshInputCanvas();
+            RecalculateAndRedraw(wxPoint(event.GetX(), event.GetY()));
+            wxGetApp().OnInputModeTitleChanged();
+        }
+        return;
 	}
 
 	Drawing::OnKeyDown(event);
@@ -707,6 +734,18 @@ void LineArcDrawing::OnKeyUp(wxKeyEvent& event)
 		RecalculateAndRedraw(wxPoint(event.GetX(), event.GetY()));
 		wxGetApp().OnInputModeTitleChanged();
 		m_A_down = false;
+		return;
+
+    case 'R':
+        // switch back to previous drawing mode
+		if(m_save_drawing_mode.size()>0){
+			drawing_mode = m_save_drawing_mode.back();
+			m_save_drawing_mode.pop_back();
+		}
+		wxGetApp().m_frame->RefreshInputCanvas();
+		RecalculateAndRedraw(wxPoint(event.GetX(), event.GetY()));
+		wxGetApp().OnInputModeTitleChanged();
+		m_R_down = false;
 		return;
 	}
 

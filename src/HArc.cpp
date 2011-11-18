@@ -126,6 +126,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( pArc->C->m_p );
+		}
 	}
 
 	const wxChar* GetTitle(){return _("Click centre point");}
@@ -147,6 +156,15 @@ public:
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( pArc->A->m_p );
 		}
 	}
 
@@ -170,6 +188,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( pArc->B->m_p );
+		}
 	}
 
 	const wxChar* GetTitle(){return _("Click second end point");}
@@ -177,6 +204,96 @@ public:
 };
 
 ClickArcEndTwo click_arc_first_two;
+
+class OffsetFromCentre: public Tool
+{
+public:
+	HArc *pArc;
+
+public:
+	void Run()
+	{
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(pArc->C->m_p);
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre");}
+	wxString BitmapPath(){return _T("offset_from_point");}
+};
+
+OffsetFromCentre offset_from_centre;
+
+class OffsetFromEndOne: public Tool
+{
+public:
+	HArc *pArc;
+
+public:
+	void Run()
+	{
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(pArc->A->m_p);
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from first end point");}
+	wxString BitmapPath(){return _T("offset_from_point");}
+};
+
+OffsetFromEndOne offset_from_end_one;
+
+class OffsetFromEndTwo: public Tool
+{
+public:
+	HArc *pArc;
+
+public:
+	void Run()
+	{
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(pArc->B->m_p);
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from first end point");}
+	wxString BitmapPath(){return _T("offset_from_point");}
+};
+
+OffsetFromEndTwo offset_from_end_two;
 
 void HArc::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 {
@@ -186,16 +303,29 @@ void HArc::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 #endif
 
 	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
-	if (pDrawingMode != NULL)
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
 	{
 		click_arc_centre.pArc = this;
 		t_list->push_back(&click_arc_centre);
 
+		offset_from_centre.pArc = this;
+		t_list->push_back(&offset_from_centre);
+		
+
 		click_arc_first_one.pArc = this;
 		t_list->push_back(&click_arc_first_one);
 
+		offset_from_end_one.pArc = this;
+		t_list->push_back(&offset_from_end_one);
+		
+
 		click_arc_first_two.pArc = this;
 		t_list->push_back(&click_arc_first_two);
+
+		offset_from_end_two.pArc = this;
+		t_list->push_back(&offset_from_end_two);
 	}
 }
 
@@ -304,19 +434,17 @@ void HArc::ModifyByMatrix(const double* m){
 	m_radius = C->m_p.Distance(A->m_p);
 }
 
-void HArc::GetBox(CBox &box){
-	box.Insert(A->m_p.X(), A->m_p.Y(), A->m_p.Z());
-	box.Insert(B->m_p.X(), B->m_p.Y(), B->m_p.Z());
 
-	if(IsIncluded(gp_Pnt(0,m_radius,0)))
-		box.Insert(C->m_p.X(),C->m_p.Y()+m_radius,C->m_p.Z());
-	if(IsIncluded(gp_Pnt(0,-m_radius,0)))
-		box.Insert(C->m_p.X(),C->m_p.Y()-m_radius,C->m_p.Z());
-	if(IsIncluded(gp_Pnt(m_radius,0,0)))
-		box.Insert(C->m_p.X()+m_radius,C->m_p.Y(),C->m_p.Z());
-	if(IsIncluded(gp_Pnt(-m_radius,0,0)))
-		box.Insert(C->m_p.X()-m_radius,C->m_p.Y(),C->m_p.Z());
+void HArc::GetBox(CBox &box)
+{
+    Handle(Geom_TrimmedCurve) arc = GC_MakeArcOfCircle(GetCircle(), A->m_p, B->m_p, true );
+    TopoDS_Edge edge = BRepBuilderAPI_MakeEdge(arc);
 
+    Bnd_Box occ_box;
+    // BRepBndLib boxlib;
+    // boxlib.Add(edge, occ_box);
+	BRepBndLib::Add(edge, occ_box);
+    box = CBox(occ_box);
 }
 
 bool HArc::IsIncluded(gp_Pnt pnt)
@@ -331,14 +459,22 @@ bool HArc::IsIncluded(gp_Pnt pnt)
 	double bx = gp_Vec(B->m_p.XYZ() - centre.XYZ()) * x_axis;
 	double by = gp_Vec(B->m_p.XYZ() - centre.XYZ()) * y_axis;
 
-	double start_angle = atan2(ay, ax);
-	double end_angle = atan2(by, bx);
+	gp_Vec reference(0,0,-1);
 
-	if(start_angle > end_angle)end_angle += 6.28318530717958;
+    gp_Pnt origin(0.0, 0.0, 0.0);
+    double start_angle = gp_Vec(origin, gp_Pnt(ax, ay, 0.0)).AngleWithRef( gp_Vec(1,0,0), reference );
+    double end_angle = gp_Vec(origin, gp_Pnt(bx, by, 0.0)).AngleWithRef( gp_Vec(1,0,0), reference );
+    double pnt_angle = gp_Vec(origin, gp_Pnt(gp_Vec(pnt.XYZ()) * x_axis, gp_Vec(pnt.XYZ()) * y_axis, 0.0)).AngleWithRef( gp_Vec(1,0,0), reference );
 
-	double pnt_angle = atan2(gp_Vec(pnt.XYZ()) * y_axis, gp_Vec(pnt.XYZ()) * x_axis);
+    while (start_angle < 0.0) start_angle += (2.0 * PI);
+    while (end_angle < 0.0) end_angle += (2.0 * PI);
+    while (pnt_angle < 0.0) pnt_angle += (2.0 * PI);
+
 	if(pnt_angle >= start_angle && pnt_angle <= end_angle)
-		return true;
+	{
+	    return(true);
+	}
+
 	return false;
 }
 
@@ -797,7 +933,7 @@ double HArc::IncludedAngle()const
 	int dir = (this->m_axis.Direction().Z() > 0) ? 1:-1;
 	if(inc_ang > 1. - 1.0e-10) return 0;
 	if(inc_ang < -1. + 1.0e-10)
-		inc_ang = PI;  
+		inc_ang = PI;
 	else {									// dot product,   v1 . v2  =  cos ang
 		if(inc_ang > 1.0) inc_ang = 1.0;
 		inc_ang = acos(inc_ang);									// 0 to pi radians

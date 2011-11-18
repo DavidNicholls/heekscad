@@ -72,6 +72,7 @@ public:
 	HeeksObj *Parallel( const double distance );
 	bool FilletAtPoint(const gp_Pnt& p, double rad);
 	static void ReverseObject(HeeksObj* object);
+	void GetBox(CBox &box) { ObjList::GetBox(box); }
 };
 
 class CSketchRelinker{

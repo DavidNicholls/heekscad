@@ -34,6 +34,7 @@ public:
 	bool CanEditString(void)const{return true;}
 	void OnEditString(const wxChar* str);
 	HeeksObj *MakeACopy(void)const;
+	HeeksObj *MakeACopyWithID();
 	const wxBitmap &GetIcon();
 	void ModifyByMatrix(const double *mat);
 	void GetProperties(std::list<Property *> *list);
@@ -41,6 +42,7 @@ public:
 	bool GetScaleAboutMatrix(double *m);
 	void GetTools(std::list<Tool*>* t_list, const wxPoint* p);
 	void WriteXML(TiXmlNode *root);
+	bool UsesID(){return true;}
 
 	gp_Trsf GetMatrix();
 	void ApplyMatrix();

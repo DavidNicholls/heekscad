@@ -473,14 +473,29 @@ bool ConvertFaceToSketch2(const TopoDS_Face& face, HeeksObj* sketch, double devi
 
 bool ConvertWireToSketch(const TopoDS_Wire& wire, HeeksObj* sketch, double deviation)
 {
+	unsigned int count = 0;
     const TopoDS_Shape &W = wire;
     for(BRepTools_WireExplorer expEdge(TopoDS::Wire(W)); expEdge.More(); expEdge.Next())
     {
         const TopoDS_Shape &E = expEdge.Current();
-        if(!ConvertEdgeToSketch2(TopoDS::Edge(E), sketch, deviation))return false;
+        if (!ConvertEdgeToSketch2(TopoDS::Edge(E), sketch, deviation))
+		{
+			return false;
+		}
+		else
+		{
+			count++;
+		}
     }
 
-	return true; // success
+	if (count > 0)
+	{
+		return true; // success
+	}
+	else
+	{
+		return false;	// no edges in the wire.
+	}
 }
 
 

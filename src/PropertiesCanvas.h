@@ -27,6 +27,8 @@ public:
     CPropertiesCanvas(wxWindow* parent);
     virtual ~CPropertiesCanvas();
 
+    std::list<Property *> GetProperties() const;
+
     //virtual void OnDraw(wxDC& dc);
     void OnSize(wxSizeEvent& event);
     void OnPropertyGridChange( wxPropertyGridEvent& event );

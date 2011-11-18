@@ -1,7 +1,6 @@
 // Edge.cpp
 // Copyright (c) 2009, Dan Heeks
 // This program is released under the BSD license. See the file COPYING for details.
-
 #include "stdafx.h"
 #include "Edge.h"
 #include "Face.h"
@@ -12,6 +11,10 @@
 #include "HeeksConfig.h"
 #include "Gripper.h"
 #include "../interface/PropertyLength.h"
+#include "Drawing.h"
+#include "DigitizeMode.h"
+#include <BRepBndLib.hxx>
+#include "HPoint.h"
 
 CEdge::CEdge(const TopoDS_Edge &edge):m_topods_edge(edge), m_vertex0(NULL), m_vertex1(NULL), m_midpoint_calculated(false), m_temp_attr(0){
 	GetCurveParams2(&m_start_u, &m_end_u, &m_isClosed, &m_isPeriodic);
@@ -110,16 +113,13 @@ void CEdge::glCommands(bool select, bool marked, bool no_color){
 	}
 }
 
-void CEdge::GetBox(CBox &box){
-	// just use the vertices for speed
-	for (TopExp_Explorer expVertex(m_topods_edge, TopAbs_VERTEX); expVertex.More(); expVertex.Next())
-	{
-		const TopoDS_Shape &V = expVertex.Current();
-		gp_Pnt pos = BRep_Tool::Pnt(TopoDS::Vertex(V));
-		double p[3];
-		extract(pos, p);
-		box.Insert(p);
-	}
+void CEdge::GetBox(CBox &box)
+{
+    Bnd_Box occ_box;
+    // BRepBndLib boxlib;
+    // boxlib.Add(m_topods_edge, occ_box);
+	BRepBndLib::Add(m_topods_edge, occ_box);
+    box = CBox(occ_box);
 }
 
 void CEdge::GetGripperPositions(std::list<GripData> *list, bool just_for_endof){
@@ -201,11 +201,98 @@ public:
 
 static EdgeToSketchTool make_sketch_tool;
 
+
+class ClickEdgeMidpoint:public Tool{
+public:
+	CEdge *which;
+
+public:
+	void Run(){
+		double centre[3];
+		CBox box;
+		which->GetBox(box);
+		box.Centre(centre);
+
+		gp_Pnt midpoint( centre[0], centre[1], centre[2] );
+
+		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(midpoint, DigitizeInputType);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( midpoint );
+		}
+	}
+	const wxChar* GetTitle(){return _("Click midpoint");}
+	wxString BitmapPath(){return _T("pickpos");}
+	const wxChar* GetToolTip(){return _("Click midpoint");}
+};
+
+static ClickEdgeMidpoint click_edge_midpoint_tool;
+
+
+class OffsetFromOnMidpointOfEdge: public Tool
+{
+public:
+	CEdge *which;
+
+public:
+	void Run()
+	{
+		double centre[3];
+		CBox box;
+		which->GetBox(box);
+		box.Centre(centre);
+
+		gp_Pnt midpoint( centre[0], centre[1], centre[2] );
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(midpoint);
+
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from midpoint");}
+	wxString BitmapPath(){return _T("offset_from_point");}
+};
+
+static OffsetFromOnMidpointOfEdge offset_from_midpoint_of_edge;
+
 void CEdge::GetTools(std::list<Tool*>* t_list, const wxPoint* p){
 	edge_for_tools = this;
 	if(!wxGetApp().m_no_creation_mode && GetParentBody())t_list->push_back(&fillet_tool);
 	if(!wxGetApp().m_no_creation_mode)t_list->push_back(&chamfer_tool);
 	if(!wxGetApp().m_no_creation_mode)t_list->push_back(&make_sketch_tool);
+
+	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
+	{
+		click_edge_midpoint_tool.which = this;
+		if(!wxGetApp().m_no_creation_mode)t_list->push_back(&click_edge_midpoint_tool);
+
+		offset_from_midpoint_of_edge.which = this;
+		if(!wxGetApp().m_no_creation_mode)t_list->push_back(&offset_from_midpoint_of_edge);
+	}
 }
 
 void CEdge::Blend(double radius,  bool chamfer_not_fillet){

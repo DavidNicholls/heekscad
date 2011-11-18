@@ -122,7 +122,16 @@ void ObjList::GetBox(CBox &box)
 		HeeksObj* object = *It;
 		if(object->OnVisibleLayer() && object->m_visible)
 		{
-			object->GetBox(box);
+		    if (It == m_objects.begin())
+		    {
+		        object->GetBox(box);
+		    }
+		    else
+		    {
+                CBox new_box;
+                object->GetBox(new_box);
+                box.Insert(new_box);
+		    }
 		}
 	}
 }

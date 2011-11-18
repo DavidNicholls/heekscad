@@ -203,7 +203,7 @@ void tooth(int i, bool want_start_point, bool make_closed_tooth_form)
 	// incremental_angle - to space the middle point at a quarter of a cycle
 	double incremental_angle = 0.5*Pi/gear_for_point->m_num_teeth - middle_phi_and_angle.angle;
 	double angle1 = tooth_angle - (inside_phi_and_angle.angle + incremental_angle);
-	double angle2 = tooth_angle + (inside_phi_and_angle.angle + incremental_angle);
+	// double angle2 = tooth_angle + (inside_phi_and_angle.angle + incremental_angle);
 	double angle3 = tooth_angle + (outside_phi_and_angle.angle + incremental_angle);
 	double angle4 = next_tooth_angle - (outside_phi_and_angle.angle + incremental_angle);
 	double angle5 = next_tooth_angle - (inside_phi_and_angle.angle + incremental_angle);

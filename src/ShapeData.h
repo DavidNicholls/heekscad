@@ -12,7 +12,8 @@ enum SolidTypeEnum{
 	SOLID_TYPE_SPHERE,
 	SOLID_TYPE_CYLINDER,
 	SOLID_TYPE_CUBOID,
-	SOLID_TYPE_CONE
+	SOLID_TYPE_CONE,
+	SOLID_TYPE_BOLT
 };
 
 // used for reading and writing to the XML file

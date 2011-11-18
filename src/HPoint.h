@@ -53,4 +53,5 @@ public:
 
 
 	static HeeksObj* ReadFromXMLElement(TiXmlElement* pElem);
+	static gp_Pnt GetOffset(gp_Pnt location);
 };

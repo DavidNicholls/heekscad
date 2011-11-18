@@ -483,3 +483,62 @@ void HeeksCADapp::ShowModalOptions()
 	COptionsDlg dlg(m_frame);
 	dlg.ShowModal();
 }
+
+bool HeeksCADapp::InputAxis(wxString dialog_title, eAxis_t *axis)
+{
+		HDialog dlg(wxGetApp().m_frame);
+		wxBoxSizer *sizerMain = new wxBoxSizer(wxVERTICAL);
+		wxStaticText *static_label = new wxStaticText(&dlg, wxID_ANY, dialog_title);
+		sizerMain->Add( static_label, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, dlg.control_border );
+
+		wxRadioButton *radioBtnX = new wxRadioButton( &dlg, wxID_ANY, wxT("along X axis"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
+		sizerMain->Add( radioBtnX, 0, wxALL, dlg.control_border );
+
+		wxRadioButton *radioBtnY = new wxRadioButton( &dlg, wxID_ANY, wxT("along Y axis"), wxDefaultPosition, wxDefaultSize, 0 );
+		sizerMain->Add( radioBtnY, 0, wxALL, dlg.control_border );
+
+		wxRadioButton *radioBtnZ = new wxRadioButton( &dlg, wxID_ANY, wxT("along Z axis"), wxDefaultPosition, wxDefaultSize, 0 );
+		sizerMain->Add( radioBtnZ, 0, wxALL, dlg.control_border );
+
+        if (axis)
+        {
+            switch (*axis)
+            {
+                case eXAxis:
+                    radioBtnX->SetValue(true);
+                    radioBtnY->SetValue(false);
+                    radioBtnZ->SetValue(false);
+                    break;
+
+                case eYAxis:
+                    radioBtnX->SetValue(false);
+                    radioBtnY->SetValue(true);
+                    radioBtnZ->SetValue(false);
+                    break;
+
+                case eZAxis:
+                    radioBtnX->SetValue(false);
+                    radioBtnY->SetValue(false);
+                    radioBtnZ->SetValue(true);
+                    break;
+            }
+        }
+
+		sizerMain->Add( dlg.MakeOkAndCancel(wxHORIZONTAL), 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, dlg.control_border );
+		dlg.SetSizer( sizerMain );
+		sizerMain->SetSizeHints(&dlg);
+		sizerMain->Fit(&dlg);
+		if(dlg.ShowModal() == wxID_OK)
+		{
+			if(axis)
+			{
+			    *axis = eZAxis;  // default.
+				if (radioBtnX->GetValue()) *axis = eXAxis;
+				if (radioBtnY->GetValue()) *axis = eYAxis;
+				if (radioBtnZ->GetValue()) *axis = eZAxis;
+			}
+			return true;
+		}
+		return false;
+}
+

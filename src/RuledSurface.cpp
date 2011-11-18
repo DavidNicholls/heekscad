@@ -57,7 +57,8 @@ void PickCreateRuledSurface()
 	}
 }
 
-HeeksObj* CreateExtrusionOrRevolution(std::list<HeeksObj*> list, double height_or_angle, bool solid_if_possible, bool revolution_not_extrusion, double taper_angle_for_extrusion, bool add_new_objects)
+
+HeeksObj* CreateExtrusionOrRevolution(std::list<HeeksObj*> list, double height_or_angle, bool solid_if_possible, bool revolution_not_extrusion, double taper_angle_for_extrusion, bool add_new_objects, extrude_axis_t *axis)
 {
 	std::list<TopoDS_Shape> faces_or_wires;
 
@@ -98,7 +99,27 @@ HeeksObj* CreateExtrusionOrRevolution(std::list<HeeksObj*> list, double height_o
 	}
 	else
 	{
-		CreateExtrusions(faces_or_wires, new_shapes, gp_Vec(0, 0, height_or_angle).Transformed(trsf), taper_angle_for_extrusion, solid_if_possible);
+		gp_Vec vector = gp_Vec(0.0, 0.0, height_or_angle);
+		if (axis)
+		{
+			switch (*axis)
+			{
+			case extrude_XAxis:
+				vector = gp_Vec(height_or_angle, 0.0, 0.0);
+				break;
+
+			case extrude_YAxis:
+				vector = gp_Vec(0.0, height_or_angle, 0.0);
+				break;
+
+			default:
+			case extrude_ZAxis:
+				vector = gp_Vec(0.0, 0.0, height_or_angle);
+				break;
+			}
+		}
+
+		CreateExtrusions(faces_or_wires, new_shapes, vector, taper_angle_for_extrusion, solid_if_possible);
 	}
 	HeeksObj* new_object = 0;
 	if(new_shapes.size() > 0)
@@ -185,7 +206,7 @@ HeeksObj* CreateRuledFromSketches(std::list<HeeksObj*> list, bool make_solid)
 	return NULL;
 }
 
-bool InputExtrusionHeight(double &value, bool *extrude_makes_a_solid, double *taper_angle)
+bool InputExtrusionHeight(double &value, bool *extrude_makes_a_solid, double *taper_angle, extrude_axis_t *axis)
 {
 		HDialog dlg(wxGetApp().m_frame);
 		wxBoxSizer *sizerMain = new wxBoxSizer(wxVERTICAL);
@@ -203,6 +224,39 @@ bool InputExtrusionHeight(double &value, bool *extrude_makes_a_solid, double *ta
 			solid_check_box->SetValue(*extrude_makes_a_solid);
 			sizerMain->Add( solid_check_box, 0, wxALL | wxALIGN_LEFT | wxALIGN_CENTER_VERTICAL, dlg.control_border );
 		}
+
+		wxRadioButton *radioBtnX = new wxRadioButton( &dlg, wxID_ANY, wxT("along X axis"), wxDefaultPosition, wxDefaultSize, wxRB_GROUP );
+		sizerMain->Add( radioBtnX, 0, wxALL, dlg.control_border );
+
+		wxRadioButton *radioBtnY = new wxRadioButton( &dlg, wxID_ANY, wxT("along Y axis"), wxDefaultPosition, wxDefaultSize, 0 );
+		sizerMain->Add( radioBtnY, 0, wxALL, dlg.control_border );
+
+		wxRadioButton *radioBtnZ = new wxRadioButton( &dlg, wxID_ANY, wxT("along Z axis"), wxDefaultPosition, wxDefaultSize, 0 );
+		sizerMain->Add( radioBtnZ, 0, wxALL, dlg.control_border );
+
+        if (axis)
+        {
+            switch (*axis)
+            {
+                case extrude_XAxis:
+                    radioBtnX->SetValue(true);
+                    radioBtnY->SetValue(false);
+                    radioBtnZ->SetValue(false);
+                    break;
+
+                case extrude_YAxis:
+                    radioBtnX->SetValue(false);
+                    radioBtnY->SetValue(true);
+                    radioBtnZ->SetValue(false);
+                    break;
+
+                case extrude_ZAxis:
+                    radioBtnX->SetValue(false);
+                    radioBtnY->SetValue(false);
+                    radioBtnZ->SetValue(true);
+                    break;
+            }
+        }
 
 		CDoubleCtrl* taper_angle_control = NULL;
 		if(taper_angle)
@@ -222,6 +276,13 @@ bool InputExtrusionHeight(double &value, bool *extrude_makes_a_solid, double *ta
 			value = value_control->GetValue();
 			if(extrude_makes_a_solid)*extrude_makes_a_solid = solid_check_box->GetValue();
 			if(taper_angle)*taper_angle = taper_angle_control->GetValue();
+			if(axis)
+			{
+			    *axis = extrude_ZAxis;  // default.
+				if (radioBtnX->GetValue()) *axis = extrude_XAxis;
+				if (radioBtnY->GetValue()) *axis = extrude_YAxis;
+				if (radioBtnZ->GetValue()) *axis = extrude_ZAxis;
+			}
 			return true;
 		}
 		return false;
@@ -236,24 +297,27 @@ void PickCreateExtrusion()
 
 	double height;
 	double taper_angle;
+    extrude_axis_t axis = extrude_ZAxis;
 	{
 		HeeksConfig config;
 		config.Read(_T("ExtrusionHeight"), &height, 10.0);
 		config.Read(_T("ExtrusionTaperAngle"), &taper_angle, 0.0);
+		config.Read(_T("ExtrusionAxis"), (int *) &axis, extrude_ZAxis);
 	}
 
-	if(InputExtrusionHeight(height, &(wxGetApp().m_extrude_to_solid), &taper_angle))
+	if(InputExtrusionHeight(height, &(wxGetApp().m_extrude_to_solid), &taper_angle, &axis))
 	{
 		{
 			HeeksConfig config;
 			config.Write(_T("ExtrusionHeight"), height);
 			config.Write(_T("ExtrusionTaperAngle"), taper_angle);
 			config.Write(_T("ExtrudeToSolid"), wxGetApp().m_extrude_to_solid);
+			config.Write(_T("ExtrusionAxis"), int(axis));
 		}
 
 		if(wxGetApp().m_marked_list->size() > 0)
 		{
-			CreateExtrusionOrRevolution(wxGetApp().m_marked_list->list(),height, wxGetApp().m_extrude_to_solid, false, taper_angle);
+			CreateExtrusionOrRevolution(wxGetApp().m_marked_list->list(),height, wxGetApp().m_extrude_to_solid, false, taper_angle, true, &axis);
 		}
 	}
 }
@@ -304,7 +368,7 @@ void PickCreateRevolution()
 	{
 		if(wxGetApp().m_marked_list->size() > 0)
 		{
-			CreateExtrusionOrRevolution(wxGetApp().m_marked_list->list(), angle, wxGetApp().m_extrude_to_solid, true, 0.0, true);
+			CreateExtrusionOrRevolution(wxGetApp().m_marked_list->list(), angle, wxGetApp().m_extrude_to_solid, true, 0.0, true, NULL);
 		}
 	}
 }
@@ -423,4 +487,5 @@ void CreateRevolutions(const std::list<TopoDS_Shape> &faces_or_wires, std::list<
 	}
 
 }
+
 

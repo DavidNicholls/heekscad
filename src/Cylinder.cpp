@@ -9,6 +9,7 @@
 #include "../interface/PropertyLength.h"
 #include "Gripper.h"
 #include "MarkedList.h"
+#include "HeeksConfig.h"
 
 static TopoDS_Solid MakeCylinder(const gp_Ax2& pos, double radius, double height)
 {
@@ -24,6 +25,18 @@ static TopoDS_Solid MakeCylinder(const gp_Ax2& pos, double radius, double height
 
 CCylinder::CCylinder(const gp_Ax2& pos, double radius, double height, const wxChar* title, const HeeksColor& col, float opacity):CSolid(MakeCylinder(pos, radius, height), title, col, opacity), m_pos(pos), m_radius(radius), m_height(height)
 {
+	HeeksConfig config;
+
+	if (m_radius <= 0)
+	{
+		config.Read(_T("Cylinder_radius"), &m_radius, 10.0);
+	}
+
+	if (m_height == 0)
+	{
+		config.Read(_T("Cylinder_height"), &m_height, 10.0);
+	}
+
 }
 
 CCylinder::CCylinder(const TopoDS_Solid &solid, const wxChar* title, const HeeksColor& col, float opacity):CSolid(solid, title, col, opacity), m_pos(gp_Pnt(0, 0, 0), gp_Dir(0, 0, 1), gp_Dir(1, 0, 0)), m_radius(0.0), m_height(0.0)
@@ -56,10 +69,14 @@ bool CCylinder::IsDifferent(HeeksObj* other)
 
 static void on_set_diameter(double value, HeeksObj* object){
 	((CCylinder*)object)->m_radius = value*0.5;
+	HeeksConfig config;
+	config.Write(_T("Cylinder_radius"), ((CCylinder*)object)->m_radius);
 }
 
 static void on_set_height(double value, HeeksObj* object){
 	((CCylinder*)object)->m_height = value;
+	HeeksConfig config;
+	config.Write(_T("Cylinder_height"), ((CCylinder*)object)->m_height);
 }
 
 

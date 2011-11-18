@@ -103,20 +103,43 @@ void DigitizeMode::OnMouse( wxMouseEvent& event ){
 		return;
 	}
 
-	if(event.LeftDown()){
+	if(event.RightDown())
+	{	
+	}
+	else if(event.RightUp())
+	{
+		MarkedObjectOneOfEach marked_object;
+		wxGetApp().FindMarkedObject(wxPoint(event.GetX(), event.GetY()), &marked_object);
+
+		wxWindow *btn = (wxWindow*) event.GetEventObject();
+		if (btn)
+		{
+			// do a standard drop down menu
+			wxGetApp().DoDropDownMenu(btn, event.GetPosition(), &marked_object, true, false);
+		}
+	}
+	else if(event.LeftDown()){
 		point_or_window->OnMouse(event);
 		lbutton_point = digitize(wxPoint(event.GetX(), event.GetY()));
 	}
 	else if(event.LeftUp()){
-		if(lbutton_point.m_type != DigitizeNoItemType){
+		if (lbutton_point.m_type != DigitizeNoItemType) {
 			digitized_point = lbutton_point;
 			if(m_doing_a_main_loop){
 				ExitMainLoop();
 			}
 		}
 	}
-	else if(event.Moving()){
-		digitize(wxPoint(event.GetX(), event.GetY()));
+	else if(event.Moving()) {
+		// the digitize() routine call will overwrite the current location value every
+		// time we move the mouse.  If we've found a location from a right mouse
+		// click menu then don't let this position be replaced by a mouse movement.
+		// This situation is identified by the m_type value of DigitizeLocateType.
+		if (digitized_point.m_type != DigitizeLocatedType)
+		{
+			digitize(wxPoint(event.GetX(), event.GetY()));
+		}
+
 		point_or_window->OnMouse(event);
 		if(m_doing_a_main_loop)
 		{
@@ -374,7 +397,7 @@ DigitizedPoint DigitizeMode::Digitize(const gp_Lin &ray){
 	return point;
 }
 
-DigitizedPoint DigitizeMode::digitize(const wxPoint &point){
+DigitizedPoint DigitizeMode::digitize(const wxPoint &point){	
 	digitized_point = digitize1(point);
 	return digitized_point;
 }
@@ -474,3 +497,27 @@ bool DigitizeMode::OnlyCoords(HeeksObj* object){
 	if(m_only_coords_set.find(object) != m_only_coords_set.end())return true;
 	return false;
 }
+
+/**
+	This routine marks the digitized point location based on an X,Y object coordinate
+	(i.e. NOT a window mouse position).  It flags the fact that this value should
+	not be overridden by setting the m_type value to DititizeLocatedType.
+ */
+void DigitizeMode::DigitizeToLocatedPosition( gp_Pnt position )
+{
+	digitized_point.m_point = position;
+	digitized_point.m_type = DigitizeLocatedType;
+
+	if(m_callback)
+	{
+		double pos[3];
+		extract(digitized_point.m_point, pos);
+		(*m_callback)(pos);
+	}
+
+	if(m_doing_a_main_loop)
+	{
+		wxGetApp().ExitMainLoop();
+	}
+}
+

@@ -16,10 +16,15 @@
 #ifdef WIN32
 #pragma warning(disable:4100)
 #pragma warning(  disable : 4244 )        // Issue warning 4244
+#pragma warning(  disable : 4273 )
 #endif
 
 #ifdef WIN32
 #pragma warning(  default : 4244 )        // Issue warning 4244
+#endif
+
+#ifndef WIN32
+	#include <Python.h>     // This needs to be above any of the standard template library files to prevent _XOPEN_SOURCE redefinition warnings.
 #endif
 
 #ifdef WIN32
@@ -230,6 +235,7 @@
 #include <wx/sizer.h>
 #include "wx/textctrl.h"
 #include "wx/textdlg.h"
+
 #include <wx/toolbar.h>
 #include <wx/tooltip.h>
 #include <wx/treectrl.h>
@@ -296,5 +302,6 @@ extern "C" {
 // Visual Studio 2010 work arround
 
 #if _MSC_VER == 1600
+	#include <Python.h>     // This needs to be above any of the standard template library files to prevent _XOPEN_SOURCE redefinition warnings.
 	#include <iterator>
 #endif

@@ -42,4 +42,5 @@ public:
 	DigitizedPoint digitize(const wxPoint &point);
 	void SetOnlyCoords(HeeksObj* object, bool onoff);
 	bool OnlyCoords(HeeksObj* object);
+	void DigitizeToLocatedPosition( gp_Pnt position );
 };

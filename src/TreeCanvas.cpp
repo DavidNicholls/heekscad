@@ -294,6 +294,13 @@ void CTreeCanvas::OnMouse( wxMouseEvent& event )
 
 void CTreeCanvas::OnKeyDown(wxKeyEvent& event)
 {
+	if (event.GetKeyCode() == WXK_DELETE)
+	{
+		wxGetApp().CreateUndoPoint();
+		wxGetApp().DeleteMarkedItems();
+		wxGetApp().Changed();
+	}
+
 	if(event.GetKeyCode() == WXK_ESCAPE && wxGetApp().EndSketchMode())
 	{}
 	else wxGetApp().input_mode_object->OnKeyDown(event);

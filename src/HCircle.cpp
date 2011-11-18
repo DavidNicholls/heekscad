@@ -899,6 +899,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(centre[0], centre[1], centre[2]) );
+		}
 	}
 
 	const wxChar* GetTitle(){return _("Click midpoint");}
@@ -924,6 +933,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(centre[0], box.MaxY(), centre[2]) );
+		}
 	}
 
 	const wxChar* GetTitle(){return _("Click centre-top point");}
@@ -947,6 +965,15 @@ public:
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(centre[0], box.MinY(), centre[2]) );
 		}
 	}
 
@@ -972,6 +999,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(box.MaxX(), centre[1], centre[2]) );
+		}
 	}
 
 	const wxChar* GetTitle(){return _("Click centre-right point");}
@@ -996,6 +1032,15 @@ public:
 		{
 			pDrawingMode->AddPoint();
 		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{	
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(box.MinX(), centre[1], centre[2]) );
+		}
 	}
 
 	const wxChar* GetTitle(){return _("Click centre-left point");}
@@ -1004,19 +1049,195 @@ public:
 
 ClickWesternMidpointOfCircle click_western_midpoint_of_circle;
 
+class OffsetFromCentre: public Tool
+{
+
+public:
+	void Run()
+	{
+		CBox box;
+		object_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);	
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(centre[0], centre[1], centre[2]));
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre");}
+	wxString BitmapPath(){return _T("offset_from_point");}
+};
+
+OffsetFromCentre offset_from_centre_of_circle;
+
+class OffsetFromNorthernMidpoint: public Tool
+{
+
+public:
+	void Run()
+	{
+		CBox box;
+		object_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);	
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(centre[0], box.MaxY(), centre[2]));
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-top point");}
+	wxString BitmapPath(){return _T("click_circle_centre_top");}
+};
+
+OffsetFromNorthernMidpoint offset_from_northern_midpoint_of_circle;
+
+class OffsetFromSouthernMidpoint: public Tool
+{
+
+public:
+	void Run()
+	{
+		CBox box;
+		object_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);	
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(centre[0], box.MinY(), centre[2]));
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Click centre-bottom point");}
+	wxString BitmapPath(){return _T("click_circle_centre_bottom");}
+};
+
+OffsetFromSouthernMidpoint offset_from_southern_midpoint_of_circle;
+
+class OffsetFromWesternMidpoint: public Tool
+{
+
+public:
+	void Run()
+	{
+		CBox box;
+		object_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);	
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(box.MinX(), centre[1], centre[2]));
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-left point");}
+	wxString BitmapPath(){return _T("click_circle_centre_left");}
+};
+
+OffsetFromWesternMidpoint offset_from_western_midpoint_of_circle;
+
+class OffsetFromEasternMidpoint: public Tool
+{
+
+public:
+	void Run()
+	{
+		CBox box;
+		object_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);	
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(box.MaxX(), centre[1], centre[2]));
+		
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		if (pDigitizeMode != NULL)
+		{
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-right point");}
+	wxString BitmapPath(){return _T("click_circle_centre_right");}
+};
+
+OffsetFromEasternMidpoint offset_from_eastern_midpoint_of_circle;
+
 void HCircle::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 {
 	object_for_tools = this;
 
 	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
-	if (pDrawingMode != NULL)
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
 	{
 		// We're drawing something.  Allow these options.
 		t_list->push_back(&click_midpoint_of_circle);
+		t_list->push_back(&offset_from_centre_of_circle);
+
 		t_list->push_back(&click_northern_midpoint_of_circle);
+		t_list->push_back(&offset_from_northern_midpoint_of_circle);
+
 		t_list->push_back(&click_southern_midpoint_of_circle);
+		t_list->push_back(&offset_from_southern_midpoint_of_circle);
+
 		t_list->push_back(&click_eastern_midpoint_of_circle);
+		t_list->push_back(&offset_from_eastern_midpoint_of_circle);
+
 		t_list->push_back(&click_western_midpoint_of_circle);
+		t_list->push_back(&offset_from_western_midpoint_of_circle);
 	}
 
 }

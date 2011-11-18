@@ -929,7 +929,7 @@ HeeksObj* CHeeksCADInterface::ExtrudeSketch(HeeksObj* sketch, double height, boo
 {
 	std::list<HeeksObj*>list;
 	list.push_back(sketch);
-	return CreateExtrusionOrRevolution(list,height, try_to_make_solid, false, 0.0, false);
+	return CreateExtrusionOrRevolution(list,height, try_to_make_solid, false, 0.0, false, NULL);
 }
 
 // surface of revolution
@@ -937,7 +937,7 @@ HeeksObj* CHeeksCADInterface::RevolveSketch(HeeksObj* sketch, double angle, bool
 {
 	std::list<HeeksObj*>list;
 	list.push_back(sketch);
-	return CreateExtrusionOrRevolution(list,angle, try_to_make_solid, true, 0.0, false);
+	return CreateExtrusionOrRevolution(list,angle, try_to_make_solid, true, 0.0, false, NULL);
 }
 
 void CHeeksCADInterface::ExtractSeparateSketches(HeeksObj* sketch, std::list<HeeksObj*> &new_separate_sketches, const bool allow_individual_objects)

@@ -18,6 +18,7 @@
 #include "CoordinateSystem.h"
 #include "Wire.h"
 #include <wx/numdlg.h>
+#include "Face.h"
 
 #include "DigitizeMode.h"
 #include "Drawing.h"
@@ -311,7 +312,7 @@ static ConvertSketchToWire convert_sketch_to_wire;
 HeeksObj *CSketch::Parallel( const double distance )
 {
     try {
-            double deviation = heekscad_interface.GetTolerance();
+			double deviation = FaceToSketchTool::deviation;
             std::list<TopoDS_Shape> wires;
             if(ConvertSketchToFaceOrWire(this, wires, false))
             {
@@ -401,14 +402,39 @@ public:
 	{
 		CBox box;
 		sketch_for_tools->GetBox(box);
+
+		printf("found ");
+        for (::size_t i=0; i<sizeof(box.m_x)/sizeof(box.m_x[0]); i++)
+        {
+            printf("%lf ", box.m_x[i]);
+        }
+        printf("\n");
+
+
 		double centre[3];
 		box.Centre(centre);
+
+		printf("centre ");
+        for (::size_t i=0; i<3; i++)
+        {
+            printf("%lf ", centre[i]);
+        }
+        printf("\n");
 
 		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(gp_Pnt(centre[0], centre[1], centre[2]), DigitizeInputType);
 		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(centre[0], centre[1], centre[2]) );
 		}
 	}
 
@@ -427,13 +453,22 @@ public:
 		CBox box;
 		sketch_for_tools->GetBox(box);
 		double centre[3];
-		box.Centre(centre);		
+		box.Centre(centre);
 
 		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(gp_Pnt(centre[0], box.MaxY(), centre[2]), DigitizeInputType);
 		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(centre[0], box.MaxY(), centre[2]) );
 		}
 	}
 
@@ -451,13 +486,22 @@ public:
 		CBox box;
 		sketch_for_tools->GetBox(box);
 		double centre[3];
-		box.Centre(centre);		
+		box.Centre(centre);
 
 		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(gp_Pnt(centre[0], box.MinY(), centre[2]), DigitizeInputType);
 		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(centre[0], box.MinY(), centre[2]) );
 		}
 	}
 
@@ -475,13 +519,22 @@ public:
 		CBox box;
 		sketch_for_tools->GetBox(box);
 		double centre[3];
-		box.Centre(centre);		
+		box.Centre(centre);
 
 		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(gp_Pnt(box.MaxX(), centre[1], centre[2]), DigitizeInputType);
 		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(box.MaxX(), centre[1], centre[2]) );
 		}
 	}
 
@@ -499,13 +552,22 @@ public:
 		CBox box;
 		sketch_for_tools->GetBox(box);
 		double centre[3];
-		box.Centre(centre);		
+		box.Centre(centre);
 
 		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(gp_Pnt(box.MinX(), centre[1], centre[2]), DigitizeInputType);
 		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
 		if (pDrawingMode != NULL)
 		{
 			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( gp_Pnt(box.MinX(), centre[1], centre[2]) );
 		}
 	}
 
@@ -514,6 +576,190 @@ public:
 };
 
 ClickWesternMidpointOfSketch click_western_midpoint_of_sketch;
+
+
+
+
+
+
+
+class OffsetFromMidpointOfSketch: public Tool
+{
+public:
+	void Run()
+	{
+		CBox box;
+		sketch_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);
+
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(centre[0], centre[1], centre[2]));
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from midpoint");}
+	wxString BitmapPath(){return _T("click_sketch_midpoint");}
+};
+
+OffsetFromMidpointOfSketch offset_from_midpoint_of_sketch;
+
+
+class OffsetFromNorthernMidpointOfSketch: public Tool
+{
+public:
+	void Run()
+	{
+		CBox box;
+		sketch_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);
+
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(centre[0], box.MaxY(), centre[2]));
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-top point");}
+	wxString BitmapPath(){return _T("click_sketch_centre_top");}
+};
+
+OffsetFromNorthernMidpointOfSketch offset_from_northern_midpoint_of_sketch;
+
+class OffsetFromSouthernMidpointOfSketch: public Tool
+{
+public:
+	void Run()
+	{
+		CBox box;
+		sketch_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);
+
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(centre[0], box.MinY(), centre[2]));
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-bottom point");}
+	wxString BitmapPath(){return _T("click_sketch_centre_bottom");}
+};
+
+OffsetFromSouthernMidpointOfSketch offset_from_southern_midpoint_of_sketch;
+
+class OffsetFromEasternMidpointOfSketch: public Tool
+{
+public:
+	void Run()
+	{
+		CBox box;
+		sketch_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);
+
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(box.MaxX(), centre[1], centre[2]));
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-right point");}
+	wxString BitmapPath(){return _T("click_sketch_centre_right");}
+};
+
+OffsetFromEasternMidpointOfSketch offset_from_eastern_midpoint_of_sketch;
+
+class OffsetFromWesternMidpointOfSketch: public Tool
+{
+public:
+	void Run()
+	{
+		CBox box;
+		sketch_for_tools->GetBox(box);
+		double centre[3];
+		box.Centre(centre);
+
+		gp_Pnt location = HPoint::GetOffset(gp_Pnt(box.MinX(), centre[1], centre[2]));
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			wxGetApp().m_digitizing->digitized_point = DigitizedPoint(location, DigitizeInputType);
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( location );
+		}
+	}
+
+	const wxChar* GetTitle(){return _("Offset from centre-left point");}
+	wxString BitmapPath(){return _T("click_sketch_centre_left");}
+};
+
+OffsetFromWesternMidpointOfSketch offset_from_western_midpoint_of_sketch;
+
+
 
 
 void CSketch::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
@@ -532,14 +778,25 @@ void CSketch::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 	t_list->push_back(&enter_sketch_mode);
 
 	Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
-	if (pDrawingMode != NULL)
+	DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+
+	if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
 	{
 		// We're drawing something.  Allow these options.
 		t_list->push_back(&click_midpoint_of_sketch);
+		t_list->push_back(&offset_from_midpoint_of_sketch);
+
 		t_list->push_back(&click_northern_midpoint_of_sketch);
+		t_list->push_back(&offset_from_northern_midpoint_of_sketch);
+
 		t_list->push_back(&click_southern_midpoint_of_sketch);
+		t_list->push_back(&offset_from_southern_midpoint_of_sketch);
+
 		t_list->push_back(&click_eastern_midpoint_of_sketch);
+		t_list->push_back(&offset_from_eastern_midpoint_of_sketch);
+
 		t_list->push_back(&click_western_midpoint_of_sketch);
+		t_list->push_back(&offset_from_western_midpoint_of_sketch);
 	}
 }
 

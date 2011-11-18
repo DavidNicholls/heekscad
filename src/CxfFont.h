@@ -273,8 +273,6 @@ public:
 
 	void Add( const VectorFont::Name_t &directory );
 
-	static std::list<wxString> GetFileNames( const wxString & Root );
-
 	std::set<VectorFont::Name_t> FontNames() const;
 	VectorFont *Font( const VectorFont::Name_t & name ) const;
 

@@ -14,6 +14,7 @@
 #include "Cuboid.h"
 #include "Sphere.h"
 #include "Cone.h"
+#include "Bolt.h"
 #include "HeeksFrame.h"
 #include "MarkedList.h"
 #include "../interface/Tool.h"
@@ -365,6 +366,8 @@ HeeksObj* CShape::MakeObject(const TopoDS_Shape &shape, const wxChar* title, Sol
 					return new CCuboid(*((TopoDS_Solid*)(&shape)), title, col, opacity);
 				case SOLID_TYPE_CONE:
 					return new CCone(*((TopoDS_Solid*)(&shape)), title, col, opacity);
+				case SOLID_TYPE_BOLT:
+					return new CBolt(*((TopoDS_Solid*)(&shape)), title, col, opacity);
 				default:
 					// check there are some faces
 					if(TopExp_Explorer(shape, TopAbs_FACE).More())

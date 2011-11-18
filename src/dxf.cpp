@@ -3,7 +3,10 @@
 // This program is released under the BSD license. See the file COPYING for details.
 
 #include "dxf.h"
+#include "../interface/strconv.h"
 #include <wx/string.h>
+#include <wx/msgdlg.h>
+
 using namespace std;
 static const double Pi = 3.14159265358979323846264338327950288419716939937511;
 
@@ -173,7 +176,7 @@ CDxfRead::CDxfRead(const char* filepath)
 	m_ifs = new ifstream(filepath);
 	if(!(*m_ifs)){
 		m_fail = true;
-        wprintf(_T("DXF file didn't load\n"));
+        wxMessageBox(_T("DXF file didn't load\n"));
 		return;
 	}
 	m_ifs->imbue(std::locale("C"));
@@ -524,17 +527,17 @@ bool CDxfRead::ReadSpline()
 			case 210:
 				// normal x
 				get_line();
-				ss.str(m_str); ss >> sd.norm[0]; if(ss.fail()) return false;
+				ss.str(m_str); ss >> sd.norm[0]; sd.norm[0] = mm(sd.norm[0]); if(ss.fail()) return false;
 				break;
 			case 220:
 				// normal y
 				get_line();
-				ss.str(m_str); ss >> sd.norm[1]; if(ss.fail()) return false;
+				ss.str(m_str); ss >> sd.norm[1]; sd.norm[1] = mm(sd.norm[1]); if(ss.fail()) return false;
 				break;
 			case 230:
 				// normal z
 				get_line();
-				ss.str(m_str); ss >> sd.norm[2]; if(ss.fail()) return false;
+				ss.str(m_str); ss >> sd.norm[2]; sd.norm[2] = mm(sd.norm[2]); if(ss.fail()) return false;
 				break;
 			case 70:
 				// flag
@@ -786,7 +789,7 @@ bool CDxfRead::ReadText()
 				// text
 				get_line();
 				DerefACI();
-				OnReadText(c, height * 25.4 / 72.0, m_str);
+				OnReadText(c, height * 25.4 / 72.0, Ctt(m_str));
 				return(true);
 
 		        case 62:

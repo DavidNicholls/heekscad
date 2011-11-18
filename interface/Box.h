@@ -6,6 +6,7 @@
 
 #include <string.h>	// for memcpy() prototype
 #include <math.h>	// for sqrt() prototype
+#include <Bnd_Box.hxx>
 
 class CBox{
 public:
@@ -15,6 +16,11 @@ public:
 	CBox():m_valid(false){}
 	CBox(const double *e):m_valid(true){memcpy(m_x, e, 6*sizeof(double));}
 	CBox(double xmin, double ymin, double zmin, double xmax, double ymax, double zmax):m_valid(true){m_x[0] = xmin; m_x[1] = ymin; m_x[2] = zmin; m_x[3] = xmax; m_x[4] = ymax; m_x[5] = zmax;}
+	CBox(const Bnd_Box &occ_box)
+	{
+	    m_valid = true;
+	    occ_box.Get(m_x[0], m_x[1], m_x[2], m_x[3], m_x[4], m_x[5]);
+	}
 
 	bool operator==( const CBox & rhs ) const
 	{
@@ -62,8 +68,14 @@ public:
 		if(b.m_valid){
 			if(m_valid){
 				for(int i = 0; i<3; i++){
-					if(b.m_x[i] < m_x[i])m_x[i] = b.m_x[i];
-					if(b.m_x[i+3] > m_x[i+3])m_x[i+3] = b.m_x[i+3];
+					if(b.m_x[i] < m_x[i])
+					{
+					    m_x[i] = b.m_x[i];
+					}
+					if(b.m_x[i+3] > m_x[i+3])
+					{
+					    m_x[i+3] = b.m_x[i+3];
+					}
 				}
 			}
 			else{
