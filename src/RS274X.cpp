@@ -146,6 +146,9 @@ bool RS274X::Read( const char *p_szFileName, const FileInterpretation_t file_int
 					// We're reading a parameter.
 					if (! ReadParameters( block ))
 					{
+						wxString error;
+						error << _("Error reading RS274X parameter block. ") << Ctt(block.c_str());
+						wxMessageBox(error);
 					    return(false);
 					}
 				} // End if - then
@@ -154,6 +157,9 @@ bool RS274X::Read( const char *p_szFileName, const FileInterpretation_t file_int
 					// It's a normal data block.
 					if (! ReadDataBlock( block ))
 					{
+						wxString error;
+						error << _("Error reading RS274X data block. ") << Ctt(block.c_str());
+						wxMessageBox(error);
 					    return(false);
 					}
 				} // End if - else
@@ -801,19 +807,17 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
 
             if (_string.find('.') == std::string::npos)
             {
-
                 i_term = InterpretCoord( _string.c_str(),
                                 m_YDigitsLeftOfPoint,
                                 m_YDigitsRightOfPoint,
                                 m_leadingZeroSuppression,
                                 m_trailingZeroSuppression );
-
             }
             else
             {
                 // The number had a decimal point explicitly defined within it.  Read it as a correctly
                 // represented number as is.
-                i_term = _value;
+                i_term = _value * m_units;
             }
 		}
 		else if (_data.substr(0,1) == "J")
@@ -832,19 +836,17 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
 
             if (_string.find('.') == std::string::npos)
             {
-
                 j_term = InterpretCoord( _string.c_str(),
                                 m_YDigitsLeftOfPoint,
                                 m_YDigitsRightOfPoint,
                                 m_leadingZeroSuppression,
                                 m_trailingZeroSuppression );
-
             }
             else
             {
                 // The number had a decimal point explicitly defined within it.  Read it as a correctly
                 // represented number as is.
-                j_term = _value;
+                j_term = _value * m_units;
             }
 		}
 		else if (_data.substr(0,3) == "M00")
@@ -898,7 +900,6 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
 
             if (x_string.find('.') == std::string::npos)
             {
-
                 double x = InterpretCoord( x_string.c_str(),
                                 m_YDigitsLeftOfPoint,
                                 m_YDigitsRightOfPoint,
@@ -921,12 +922,12 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
                 // represented number as is.
                 if (m_absoluteCoordinatesMode)
                 {
-                    position.SetX( x );
+                    position.SetX( x * m_units );
                 }
                 else
                 {
                     // Incremental position.
-                    position.SetX( position.X() + x );
+                    position.SetX( position.X() + (x * m_units) );
                 }
             }
 		}
@@ -969,12 +970,12 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
 
                     if (m_absoluteCoordinatesMode)
                     {
-                        position.SetY( y );
+                        position.SetY( y * m_units );
                     }
                     else
                     {
                         // Incremental position.
-                        position.SetY( position.Y() + y );
+                        position.SetY( position.Y() + (y * m_units) );
                     }
             }
 		}
@@ -1073,53 +1074,27 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
 
 		if (m_part_circular_interpolation)
 		{
-		    if (m_full_circular_interpolation)
+            // arc
+            // circular interpolation.
+
+            Trace trace( m_aperture_table[m_active_aperture], Trace::eCircular );
+            trace.Start( m_current_position );
+            trace.End( position );
+            trace.Clockwise( m_cw_circular_interpolation );
+            trace.I( i_term );
+            trace.J( j_term );
+            trace.Radius( sqrt((i_term * i_term) + (j_term * j_term)) );
+
+            if(m_area_fill)
             {
-                // full circle
-                // circular interpolation.
-                double radius = sqrt((i_term * i_term) + (j_term * j_term));
-
-                Trace trace( m_aperture_table[m_active_aperture], Trace::eCircular );
-                trace.Radius(radius);
-                trace.Start( position );
-                trace.End( position );
-                trace.Clockwise( m_cw_circular_interpolation );
-
-                if(m_area_fill)
-                {
-                    m_filled_area_traces.push_back( trace );
-                }
-                else
-                {
-                    m_traces.push_back( trace );
-                }
-
-                m_current_position = position;
+                m_filled_area_traces.push_back( trace );
             }
             else
             {
-                // arc
-                // circular interpolation.
-
-                Trace trace( m_aperture_table[m_active_aperture], Trace::eCircular );
-                trace.Start( m_current_position );
-                trace.End( position );
-                trace.Clockwise( m_cw_circular_interpolation );
-                trace.I( i_term );
-                trace.J( j_term );
-                trace.Radius( sqrt((i_term * i_term) + (j_term * j_term)) );
-
-                if(m_area_fill)
-                {
-                    m_filled_area_traces.push_back( trace );
-                }
-                else
-                {
-                    m_traces.push_back( trace );
-                }
-
-                m_current_position = position;
+                m_traces.push_back( trace );
             }
+
+            m_current_position = position;
 		} // End if - then
 		else
 		{
@@ -1140,6 +1115,33 @@ bool RS274X::ReadDataBlock( const std::string & data_block )
 
 			m_current_position = position;
 		} // End if - else
+	}
+	else if ((position.Distance( m_current_position ) <= wxGetApp().m_geom_tol) && (m_lamp_on == true))
+	{
+		if (m_full_circular_interpolation)
+        {
+			// If the position == m_current_position then we could be drawing a full circle but if it's not then it can't be a full circle.
+            // full circle
+            // circular interpolation.
+            double radius = sqrt((i_term * i_term) + (j_term * j_term));
+
+            Trace trace( m_aperture_table[m_active_aperture], Trace::eCircular );
+            trace.Radius(radius);
+            trace.Start( position );
+            trace.End( position );
+            trace.Clockwise( m_cw_circular_interpolation );
+
+            if(m_area_fill)
+            {
+                m_filled_area_traces.push_back( trace );
+            }
+            else
+            {
+                m_traces.push_back( trace );
+            }
+
+            m_current_position = position;
+        }
 	}
 
 	return(true);
@@ -2083,7 +2085,7 @@ HeeksObj *RS274X::Trace::CentrelineGraphics() const
 			if ((abs(m_i_term) < m_tolerance) && (abs(m_j_term) < m_tolerance) && (Radius() > m_tolerance))
 			{
 				// It's a full circle.
-				gp_Circ circ(gp_Ax2(Start(),gp_Dir(0,0,-1)), (m_aperture.OutsideDiameter()/2.0));
+				gp_Circ circ(gp_Ax2(Start(),gp_Dir(0,0,-1)), Radius());
 				return( new HCircle( circ, &wxGetApp().current_color ) );
 			}
 			else

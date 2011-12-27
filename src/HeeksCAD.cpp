@@ -115,7 +115,7 @@ HeeksCADapp::HeeksCADapp(): ObjList()
 
 	Py_Initialize();
 
-	m_version_number = _T("0 17 109");
+	m_version_number = _T("0 17 110");
 	m_geom_tol = 0.000001;
 	TiXmlBase::SetRequiredDecimalPlaces( DecimalPlaces(m_geom_tol) );	 // Ensure we write XML in enough accuracy to be useful when re-read.
 
@@ -201,12 +201,6 @@ HeeksCADapp::HeeksCADapp(): ObjList()
 	m_extrude_to_solid = true;
 	m_revolve_angle = 360.0;
 
-	{
-		wxGetApp().m_hide_verbose_help_text = false;
-		HeeksConfig config;
-		config.Read(_T("HideVerboseHelpText"), &(wxGetApp().m_hide_verbose_help_text));
-	}
-
 	m_depressed_key = 0;    // Nothing is pressed.
 	m_previous_selection_filter = 0;    // Nothing remembered.
 
@@ -225,6 +219,10 @@ HeeksCADapp::HeeksCADapp(): ObjList()
         extensions.push_back(_T("gbr"));
         extensions.push_back(_T("rs274x"));
         extensions.push_back(_T("pho"));
+		extensions.push_back(_T("gtl"));
+		extensions.push_back(_T("gbo"));
+		extensions.push_back(_T("gbl"));
+		extensions.push_back(_T("gto"));
         RegisterFileOpenHandler( extensions, OpenRS274XFile );
     }
 
@@ -2976,14 +2974,6 @@ static void on_dragging_moves_objects(bool value, HeeksObj* object)
 	wxGetApp().Repaint();
 }
 
-static void on_set_hide_verbose_help_text(bool value, HeeksObj* object)
-{
-	wxGetApp().m_hide_verbose_help_text = value;
-	wxGetApp().Repaint();
-	HeeksConfig config;
-	config.Write(_T("HideVerboseHelpText"), wxGetApp().m_hide_verbose_help_text);
-}
-
 static void on_edit_font_paths(const wxChar* value, HeeksObj* object)
 {
 	wxGetApp().m_font_paths.assign(value);
@@ -3153,7 +3143,6 @@ void HeeksCADapp::GetOptions(std::list<Property *> *list)
 	}
 	view_options->m_list.push_back(new PropertyCheck(_("input uses modal dialog"), m_input_uses_modal_dialog, NULL, on_input_uses_modal_dialog));
 	view_options->m_list.push_back(new PropertyCheck(_("dragging moves objects"), m_dragging_moves_objects, NULL, on_dragging_moves_objects));
-	view_options->m_list.push_back(new PropertyCheck(_("hide verbose help text"), m_hide_verbose_help_text, NULL, on_set_hide_verbose_help_text));
 
 	list->push_back(view_options);
 

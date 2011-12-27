@@ -87,6 +87,8 @@ public:
 	virtual void SetXMLElement(TiXmlElement* element){}
 	virtual void SetFromXMLElement(TiXmlElement* pElem){}
 
+	gp_Pnt CentreOfMass() const { return(m_centre_of_mass); }
+
 	void Init();
 };
 

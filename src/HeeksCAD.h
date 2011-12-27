@@ -206,7 +206,6 @@ public:
 	bool m_input_uses_modal_dialog;
 	bool m_dragging_moves_objects;
 	bool m_no_creation_mode; // set from a plugin, for making an exporter only application
-	bool m_hide_verbose_help_text;
 
 	double m_min_correlation_factor;
 	double m_max_scale_threshold;

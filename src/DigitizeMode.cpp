@@ -90,6 +90,7 @@ static wxString digitize_help_text;
 const wxChar* DigitizeMode::GetHelpText()
 {
 	if(!m_doing_a_main_loop)return NULL;
+
 	digitize_help_text.assign(_("Press Esc key to cancel"));
 	digitize_help_text.append(_T("\n"));
 	digitize_help_text.append(_("Left button to accept position"));
@@ -104,7 +105,7 @@ void DigitizeMode::OnMouse( wxMouseEvent& event ){
 	}
 
 	if(event.RightDown())
-	{	
+	{
 	}
 	else if(event.RightUp())
 	{
@@ -179,7 +180,7 @@ static const gp_Trsf& digitizing_matrix(bool calculate = false){
 			po = wxGetApp().m_current_viewport->m_view_point.glUnproject(po);
 			x1 = wxGetApp().m_current_viewport->m_view_point.glUnproject(x1);
 			y1 = wxGetApp().m_current_viewport->m_view_point.glUnproject(y1);
-			
+
 			global_matrix_relative_to_screen = make_matrix(origin, gp_Vec(po, x1).Normalized(), gp_Vec(po, y1).Normalized());
 		}
 		else{
@@ -353,7 +354,7 @@ DigitizedPoint DigitizeMode::digitize1(const wxPoint &input_point){
 	else if(wxGetApp().digitize_coords){
 		point = Digitize(ray);
 	}
-	
+
 	return point;
 }
 
@@ -397,7 +398,7 @@ DigitizedPoint DigitizeMode::Digitize(const gp_Lin &ray){
 	return point;
 }
 
-DigitizedPoint DigitizeMode::digitize(const wxPoint &point){	
+DigitizedPoint DigitizeMode::digitize(const wxPoint &point){
 	digitized_point = digitize1(point);
 	return digitized_point;
 }
@@ -428,7 +429,7 @@ static void set_offset(const wxChar *value, HeeksObj* object)
 				offset *= wxGetApp().m_view_units;
 				switch(i)
 				{
-				case 0: 
+				case 0:
 					wxGetApp().m_digitizing->digitized_point.m_point.SetX( location.X() + offset );
 					break;
 
@@ -440,7 +441,7 @@ static void set_offset(const wxChar *value, HeeksObj* object)
 					wxGetApp().m_digitizing->digitized_point.m_point.SetZ( location.Z() + offset );
 					break;
 				}
-				
+
 			}
 		}
 	}

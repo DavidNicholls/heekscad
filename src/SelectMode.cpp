@@ -67,8 +67,6 @@ static wxString str_for_GetHelpText;
 
 const wxChar* CSelectMode::GetHelpText()
 {
-	if (wxGetApp().m_hide_verbose_help_text) return(NULL);
-
 	str_for_GetHelpText = wxString(_("Left button for selecting objects"))
 		+ _T("\n") + _("( with Ctrl key for extra objects)")
 		+ _T("\n") + _("( with Shift key for similar objects)")
