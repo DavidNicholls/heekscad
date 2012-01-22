@@ -42,8 +42,6 @@ static wxString str_for_GetHelpText;
 
 const wxChar* ViewPanning::GetHelpText()
 {
-	if (wxGetApp().m_hide_verbose_help_text) return(NULL);
-
 	str_for_GetHelpText = wxString(_("Drag with the left mouse button"));
 	return str_for_GetHelpText;
 }

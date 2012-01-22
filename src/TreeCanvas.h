@@ -36,7 +36,7 @@ private:
 
 	bool IsExpanded(HeeksObj* object);
 	void SetExpanded(HeeksObj* object, bool bExpanded);
-	void RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool expanded, int level);
+	int  RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool expanded, int level);
 	void RenderBranchIcons(HeeksObj* object, HeeksObj* next_object, bool expanded, int level);
 	void RenderObject(bool expanded, HeeksObj* prev_object, bool prev_object_expanded, HeeksObj* object, HeeksObj* next_object, int level);
 	void Render(bool just_for_calculation = false); // drawing commands for all the objects

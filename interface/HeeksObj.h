@@ -159,6 +159,7 @@ public:
 	virtual void OnApplyProperties(){}
 	virtual bool ValidateProperties(){return true;}
 	virtual const wxBitmap &GetIcon();
+	virtual std::list<wxBitmap> GetIcons();
 	virtual int Intersects(const HeeksObj *object, std::list< double > *rl)const{return 0;}
 	virtual bool FindNearPoint(const double* ray_start, const double* ray_direction, double *point){return false;}
 	virtual bool FindPossTangentPoint(const double* ray_start, const double* ray_direction, double *point){return false;}

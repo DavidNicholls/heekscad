@@ -118,6 +118,15 @@ const wxBitmap &HeeksObj::GetIcon()
 	return *icon;
 }
 
+std::list<wxBitmap> HeeksObj::GetIcons()
+{
+    std::list<wxBitmap> icons;
+    const wxBitmap icon = GetIcon();
+    icons.push_back(icon);
+    return(icons);
+}
+
+
 void HeeksObj::GetProperties(std::list<Property *> *list)
 {
 	bool editable = CanEditString();

@@ -48,8 +48,6 @@ static wxString str_for_GetHelpText;
 
 const wxChar* ViewZooming::GetHelpText()
 {
-	if (wxGetApp().m_hide_verbose_help_text) return(NULL);
-
 	str_for_GetHelpText = wxString(_("Drag with the left mouse button")) + _T("\n") + (m_reversed ? _("Forward to zoom in, Back to zoom out"):_("Back to zoom in, Forward to zoom out")) + _T("\n") + _("Hold middle mouse button down to pan");
 	return str_for_GetHelpText;
 }

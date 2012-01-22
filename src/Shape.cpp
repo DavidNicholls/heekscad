@@ -24,6 +24,8 @@
 #include "../interface/PropertyVertex.h"
 #include "../interface/PropertyCheck.h"
 #include <locale.h>
+#include "Drawing.h"
+#include "DigitizeMode.h"
 
 // static member variable
 bool CShape::m_solids_found = false;
@@ -254,6 +256,39 @@ void CShape::GetBox(CBox &box)
 	box.Insert(m_box);
 }
 
+class ClickCentreOfMass:public Tool{
+public:
+	CShape *which;
+
+public:
+	void Run()
+	{
+		wxGetApp().m_digitizing->digitized_point = DigitizedPoint(which->CentreOfMass(), DigitizeInputType);
+
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+		if (pDrawingMode != NULL)
+		{
+			pDrawingMode->AddPoint();
+		}
+
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		if (pDigitizeMode != NULL)
+		{
+			// Tell the DigitizeMode class that we're specifying the
+			// location rather than the mouse location over the graphics window.
+
+			pDigitizeMode->DigitizeToLocatedPosition( which->CentreOfMass() );
+		}
+	}
+	const wxChar* GetTitle(){return _("Click centre of mass");}
+	wxString BitmapPath(){return _T("pickpos");}
+	const wxChar* GetToolTip(){return _("Click centre of mass");}
+};
+
+static ClickCentreOfMass click_centre_of_mass_tool;
+
+
+
 static CShape* shape_for_tools = NULL;
 
 class OffsetShapeTool:public Tool{
@@ -296,6 +331,25 @@ void CShape::GetTools(std::list<Tool*>* t_list, const wxPoint* p)
 {
 	shape_for_tools = this;
 	if(!wxGetApp().m_no_creation_mode)t_list->push_back(&offset_shape_tool);
+
+	if (! m_volume_found)
+	{
+		CalculateVolumeAndCentre();
+	}
+
+	if (m_volume_found)
+	{
+		DigitizeMode *pDigitizeMode = dynamic_cast<DigitizeMode *>(wxGetApp().input_mode_object);
+		Drawing *pDrawingMode = dynamic_cast<Drawing *>(wxGetApp().input_mode_object);
+
+		if ((pDrawingMode != NULL) || (pDigitizeMode != NULL))
+		{
+			click_centre_of_mass_tool.which = this;
+			t_list->push_back(&click_centre_of_mass_tool);
+		}
+	}
+
+
 }
 
 void CShape::MakeTransformedShape(const gp_Trsf &mat)

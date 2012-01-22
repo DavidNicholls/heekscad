@@ -628,8 +628,9 @@ void CTreeCanvas::OnLabelRightDown(HeeksObj* object, wxMouseEvent& event)
 	}
 }
 
-void CTreeCanvas::RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool expanded, int level)
+int CTreeCanvas::RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool expanded, int level)
 {
+    int width = 16;
 	int num_children = object->GetNumChildren();
 	if(num_children > 0)
 	{
@@ -642,11 +643,13 @@ void CTreeCanvas::RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool
 				if(expanded)
 				{
 					m_dc->DrawBitmap(*bmp_branch_minus, m_xpos, m_ypos);
+					width = bmp_branch_minus->GetWidth();
 					if(render_labels)AddPlusOrMinusButton(object, false);
 				}
 				else
 				{
 					m_dc->DrawBitmap(*bmp_branch_plus, m_xpos, m_ypos);
+					width = bmp_branch_plus->GetWidth();
 					if(render_labels)AddPlusOrMinusButton(object, true);
 				}
 			}
@@ -656,11 +659,13 @@ void CTreeCanvas::RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool
 				if(expanded)
 				{
 					m_dc->DrawBitmap(*bmp_branch_end_minus, m_xpos, m_ypos);
+					width = bmp_branch_end_minus->GetWidth();
 					if(render_labels)AddPlusOrMinusButton(object, false);
 				}
 				else
 				{
 					m_dc->DrawBitmap(*bmp_branch_end_plus, m_xpos, m_ypos);
+					width = bmp_branch_end_plus->GetWidth();
 					if(render_labels)AddPlusOrMinusButton(object, true);
 				}
 			}
@@ -671,11 +676,13 @@ void CTreeCanvas::RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool
 			if(expanded)
 			{
 				m_dc->DrawBitmap(*bmp_minus, m_xpos, m_ypos);
+				width = bmp_minus->GetWidth();
 				if(render_labels)AddPlusOrMinusButton(object, false);
 			}
 			else
 			{
 				m_dc->DrawBitmap(*bmp_plus, m_xpos, m_ypos);
+				width = bmp_plus->GetWidth();
 				if(render_labels)AddPlusOrMinusButton(object, true);
 			}
 		}
@@ -685,10 +692,20 @@ void CTreeCanvas::RenderBranchIcon(HeeksObj* object, HeeksObj* next_object, bool
 		if(level)
 		{
 			// just branches
-			if(next_object)m_dc->DrawBitmap(*bmp_branch_split, m_xpos, m_ypos);
-			else m_dc->DrawBitmap(*bmp_branch_end, m_xpos, m_ypos);
+			if(next_object)
+			{
+			    m_dc->DrawBitmap(*bmp_branch_split, m_xpos, m_ypos);
+			    width = bmp_branch_split->GetWidth();
+			}
+			else
+			{
+			    m_dc->DrawBitmap(*bmp_branch_end, m_xpos, m_ypos);
+			    width = bmp_branch_end->GetWidth();
+			}
 		}
 	}
+
+	return(width);
 }
 
 static std::list<bool> end_child_list;
@@ -708,8 +725,8 @@ void CTreeCanvas::RenderBranchIcons(HeeksObj* object, HeeksObj* next_object, boo
 	}
 
 	// render + or -
-	if(!render_just_for_calculation)RenderBranchIcon(object, next_object, expanded, level);
-	m_xpos += 16;
+	if(!render_just_for_calculation) m_xpos += RenderBranchIcon(object, next_object, expanded, level);
+	// m_xpos += 16;
 }
 
 void CTreeCanvas::RenderObject(bool expanded, HeeksObj* prev_object, bool prev_object_expanded, HeeksObj* object, HeeksObj* next_object, int level)
@@ -718,10 +735,17 @@ void CTreeCanvas::RenderObject(bool expanded, HeeksObj* prev_object, bool prev_o
 
 	RenderBranchIcons(object, next_object, expanded, level);
 
-	int label_start_x = m_xpos;
-	// find icon info
-	if(!render_just_for_calculation)m_dc->DrawBitmap(object->GetIcon(), m_xpos, m_ypos);
-	m_xpos += 16;
+	int label_start_x = m_xpos + 2;
+	std::list<wxBitmap> icons = object->GetIcons();
+
+    for (std::list<wxBitmap>::const_iterator itIcon = icons.begin(); itIcon != icons.end(); itIcon++)
+    {
+        if(!render_just_for_calculation)
+        {
+            m_dc->DrawBitmap(*itIcon, m_xpos, m_ypos);
+            m_xpos += itIcon->GetWidth() + 2;
+        }
+    }
 
 	wxString str(object->GetShortStringOrTypeString());
 	if(!render_just_for_calculation)
