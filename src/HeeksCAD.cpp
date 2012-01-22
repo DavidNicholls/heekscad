@@ -115,7 +115,7 @@ HeeksCADapp::HeeksCADapp(): ObjList()
 
 	Py_Initialize();
 
-	m_version_number = _T("0 17 109");
+	m_version_number = _T("0 17 110");
 	m_geom_tol = 0.000001;
 	TiXmlBase::SetRequiredDecimalPlaces( DecimalPlaces(m_geom_tol) );	 // Ensure we write XML in enough accuracy to be useful when re-read.
 
